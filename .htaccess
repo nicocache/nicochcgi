@@ -1,6 +1,6 @@
 DirectoryIndex index.cgi
 Options +ExecCGI
-AddHandler cgi-script .cgi .pl
+AddHandler cgi-script .cgi
 
 <Files "*">
     Order deny,allow
@@ -9,7 +9,7 @@ AddHandler cgi-script .cgi .pl
     Allow from 192.168.0.
 </Files>
 
-<Files "nico-anime.pl">
+<Files ~ "\.pl$">
    Deny from all
 </Files>
 

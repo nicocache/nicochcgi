@@ -1,4 +1,9 @@
 #!/usr/bin/perl
+use File::Spec;
+use File::Basename 'basename', 'dirname';
+
+require File::Spec->catfile(dirname(__FILE__),"common.pl");
+
 print <<"HEAD";
 Content-type: text/html
 
@@ -76,44 +81,3 @@ FORM
 print "</div>";
 print "</body></html>";
 
-
-sub GetChannelThumbIframe{
-  my $chid=$_[0];
-  return "<iframe class='channel_thumb' src='http://ch.nicovideo.jp/$chid/thumb_channel' scrolling='no'></iframe>";
-}
-
-sub GetChannels{
-  my @result;
-  open(FILE,"< chlist.txt");
-  while(my $urlch =<FILE>){
-    if($urlch=~ m!^https?://ch.nicovideo.jp/.+!){
-      push @result,$urlch;
-    }
-  }
-  return @result;
-}
-
-sub GetChannelName{
-  my $arg=$_[0];
-  if($arg=~ m!^https?://ch.nicovideo.jp/channel/([^/]+)!){
-    return $1;
-  }
-  if($arg=~ m!^https?://ch.nicovideo.jp/([^/]+)!){
-    return $1;
-  }
-  return "";
-}
-
-sub GetConf{
-  my $file=$_[0];
-  open(CONF,"< $file");
-  my %result;
-  while(my $line=<CONF>){
-    if($line =~ m/^\#/){ next;}
-    if($line =~ m/^(\w+)\=(.+)$/){
-      $result{$1}=$2;
-      next;
-    }
-  }
-  return %result;
-}

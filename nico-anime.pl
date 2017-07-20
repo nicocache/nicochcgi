@@ -9,6 +9,8 @@ use Web::Scraper;
 use XML::Simple;
 use Net::Netrc;
 
+require File::Spec->catfile(dirname(__FILE__),"common.pl");
+
 my $mach = Net::Netrc->lookup('nicovideo');
 my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
 
@@ -70,31 +72,5 @@ foreach my $url (@url) {
         }
         sleep 5;
     }
-}
-
-sub GetChannels{
-  my @result;
-  my $chlist=File::Spec->catfile(dirname(__FILE__),"chlist.txt");
-  open(FILE,"<",$chlist);
-  while(my $urlch =<FILE>){
-    if($urlch=~ m!^(https?://ch.nicovideo.jp/.+)!){
-      push @result,$1;
-    }
-  }
-  return @result;
-}
-
-sub GetConf{
-  my $file=$_[0];
-  open(CONF,"< $file");
-  my %result;
-  while(my $line=<CONF>){
-    if($line =~ m/^\#/){ next;}
-    if($line =~ m/^(\w+)\=(.+)$/){
-      $result{$1}=$2;
-      next;
-    }
-  }
-  return %result;
 }
 
