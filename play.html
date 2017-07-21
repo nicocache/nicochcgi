@@ -2,19 +2,85 @@
 
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>ニコニコ動画プレイヤー</title>
+    <style type="text/css">
+      a.button{display: inline-block;padding: 0.3em 0.5em;text-decoration: none;background: #888;color: #FFF;border-radius: 3px;}
+    </style>
   </head>
-  <body>
-    <div class="VideoPlayer" style="position:absolute;top 0;left 0;;z-index:1;width:855px;height:481px;" >
+  <body style="background-color:black;margin:0;overflow:hidden;">
+    <div id="VideoPlayer" style="z-index:1;width:855px;height:481px;margin:auto;" >
       <video width="855" height="481" autoplay controls>
       </video>
+      <canvas style="margin:auto;top:0;position:absolute;z-index:2;width:855px;height:481px;background:transparent;pointer-events: none;" width="855" height="481">
+      </canvas>
     </div>
-    <canvas style="position:absolute;z-index:2;top 0;left 0;width:855px;height:481px;background:transparent;pointer-events: none;" width="855" height="481">
-    </canvas>
+　　<div id="controler">
+      <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">全画面</a>
+      <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()">コメント非表示</a>
+      <a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>
+    </div>
     <script>
 //<![CDATA[
       CommentSource="";
+      ShowComment=true;
       SetFromLocationHash();
+      DarkBackground=true;
+      FullScreenSetting=false;
+      window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
+      function ToggleFullScreen(){
+        FullScreenSetting=!FullScreenSetting;
+        ApplyFullScreenSetting();
+      }
+      function ApplyFullScreenSetting(){
+        if(FullScreenSetting){SetSizeFull();}
+        else{SetSizeDefault();}
+      }
+      function SetSizeFull(){
+        var w=window.innerWidth;
+        var h=window.innerWidth/855*481;
+        if(h>window.innerHeight){
+          h=window.innerHeight;
+          w=h/481*855;
+        }
+        SetSize(w,h);
+      }
+      function SetSizeDefault(){
+        SetSize(855,481);
+      }
+      function SetSize(width,height){
+        var videoDiv1= document.getElementById("VideoPlayer");
+        var controler1= document.getElementById("controler");
+        var canvas1=document.getElementsByTagName("canvas")[0];
+        var video1=document.getElementsByTagName("video")[0];
+
+        videoDiv1.style.width=width+"px";
+        canvas1.style.width=width+"px";
+        video1.style.width=width+"px";
+        video1.width=width;
+//        canvas1.width=width;
+
+        videoDiv1.style.height=height+"px";
+        canvas1.style.height=height+"px";
+        video1.style.height=height+"px";
+        video1.height=height;
+//        canvas1.height=height;
+      }
+      function ToggleBackground(){
+        DarkBackground=!DarkBackground;
+        if(DarkBackground){document.body.style.backgroundColor="black";}
+        else{document.body.style.backgroundColor="white";}
+      }
+      function ToggleComment(){
+        ShowComment=!ShowComment;
+        if(!ShowComment){
+          document.getElementById("toggle_comment").innerText="コメント表示";
+          var canvas1=document.getElementsByTagName("canvas")[0];
+          var context1=canvas1.getContext('2d');
+          context1.clearRect(0,0,canvas1.width,canvas1.height);
+        }
+        else{document.getElementById("toggle_comment").innerText="コメント非表示";}
+      }
       function SetFromLocationHash(){
         var hash=window.location.hash.split(":");
         var id=hash[0].slice(1);
@@ -23,6 +89,7 @@
         video1.src="movie.cgi?c="+hash[1]+"&v="+id;
       }
       function WriteComment(){
+        if(!ShowComment){return;}
         var canvas1=document.getElementsByTagName("canvas")[0];
         var video1=document.getElementsByTagName("video")[0];
         var context1=canvas1.getContext('2d');
@@ -45,31 +112,28 @@
             if(comment.width<0){comment.width=context1.measureText(comment.text).width;}
             var x=((comment.vpos-time * 100)/cmDuration)*(canvas1.width+comment.width)-comment.width;
             var r=GetFromOccupied(occupiedPlaces,x,comment.lastY,comment.width,height);
-//            context1.fillText(comment.text,x,height);
             comment.lastY=r.y;
             context1.fillStyle="#fff";
             context1.fillText(comment.text,r.x,r.y+height);
             context1.strokeStyle ="#000";
             context1.strokeText(comment.text,r.x,r.y+height);
             occupiedPlaces.push(new occupiedPlace(r.x,r.y,comment.width,height));
-//            height+=15;
           }
         }
       }
       function GetFromOccupied(occupieds,x,y,w,fontHeight){
         var cord=function(x,y){this.x=x;this.y=y;}
+        //if(y>0){return new cord(x,y);}
         var result=new cord(x,y);
         for(var i=0;i<occupieds.length;i++){
           var current=occupieds[i];
           if(current.y==result.y){
-console.log(current.x+","+current.y+"["+current.w+"] "+result.x+","+result.y);
             if(current.x<result.x+w && result.x< current.x+current.width){
               result.y+=fontHeight;
               i=0;
             }
           }
         }
-//console.log(result.x+" , "+result.y);
         return result;
       }
       function ParseComment(xml){
@@ -81,7 +145,7 @@ console.log(current.x+","+current.y+"["+current.w+"] "+result.x+","+result.y);
           var chat=function(text,vpos){
             this.text=text;
             this.vpos=vpos;
-            this.lastY=0;
+            this.lastY=-1;
             this.width=-1;
           }
           result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos")));
