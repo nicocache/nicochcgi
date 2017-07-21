@@ -37,7 +37,7 @@ foreach my $dir (@dirs){
       next if ! -e $file;
       my ($watchid,$title) = $file =~ m!/([^\./]+)\.(.+)\.[^\.]+$!;
       next if $watchid == "tmp";
-      print "<a href='movie.cgi?c=$chid&v=$watchid'>$title</a>";
+      print "<a href='play.html\#$watchid\:$chid'>$title</a>";
       print "(<a href='http://www.nicovideo.jp/watch/$watchid'>org</a>)<br />\n";
     }
     print "</div>\n";

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>ニコニコ動画プレイヤー</title>
+  </head>
+  <body>
+    <div class="VideoPlayer" style="position:absolute;top 0;left 0;;z-index:1;width:855px;height:481px;" >
+      <video width="855" height="481" autoplay controls>
+      </video>
+    </div>
+    <canvas style="position:absolute;z-index:2;top 0;left 0;width:855px;height:481px;background:transparent;pointer-events: none;" width="855" height="481">
+    </canvas>
+    <script>
+//<![CDATA[
+      CommentSource="";
+      SetFromLocationHash();
+      function SetFromLocationHash(){
+        var hash=window.location.hash.split(":");
+        var id=hash[0].slice(1);
+        CommentSource="commentproxy.cgi?id="+id;
+        var video1=document.getElementsByTagName("video")[0];
+        video1.src="movie.cgi?c="+hash[1]+"&v="+id;
+      }
+      function WriteComment(){
+        var canvas1=document.getElementsByTagName("canvas")[0];
+        var video1=document.getElementsByTagName("video")[0];
+        var context1=canvas1.getContext('2d');
+        context1.clearRect(0,0,canvas1.width,canvas1.height);
+        var height=30;
+        context1.font=height+"px 'ＭＳ ゴシック'";
+        var time=video1.currentTime;
+        
+        var cmDuration=400;
+        var occupiedPlaces=[];
+        for(var i=0;i<Comments.length;i++){
+          var comment=Comments[i];
+          if(time * 100<comment.vpos && comment.vpos < time *100 +cmDuration){
+            var occupiedPlace=function(x,y,width,height){
+              this.x=x;
+              this.y=y;
+              this.width=width;
+              this.height=height;
+            };
+            if(comment.width<0){comment.width=context1.measureText(comment.text).width;}
+            var x=((comment.vpos-time * 100)/cmDuration)*(canvas1.width+comment.width)-comment.width;
+            var r=GetFromOccupied(occupiedPlaces,x,comment.lastY,comment.width,height);
+//            context1.fillText(comment.text,x,height);
+            comment.lastY=r.y;
+            context1.fillStyle="#fff";
+            context1.fillText(comment.text,r.x,r.y+height);
+            context1.strokeStyle ="#000";
+            context1.strokeText(comment.text,r.x,r.y+height);
+            occupiedPlaces.push(new occupiedPlace(r.x,r.y,comment.width,height));
+//            height+=15;
+          }
+        }
+      }
+      function GetFromOccupied(occupieds,x,y,w,fontHeight){
+        var cord=function(x,y){this.x=x;this.y=y;}
+        var result=new cord(x,y);
+        for(var i=0;i<occupieds.length;i++){
+          var current=occupieds[i];
+          if(current.y==result.y){
+console.log(current.x+","+current.y+"["+current.w+"] "+result.x+","+result.y);
+            if(current.x<result.x+w && result.x< current.x+current.width){
+              result.y+=fontHeight;
+              i=0;
+            }
+          }
+        }
+//console.log(result.x+" , "+result.y);
+        return result;
+      }
+      function ParseComment(xml){
+        var result=[];
+        var parser = new DOMParser();
+        var dom=parser.parseFromString(xml, 'text/xml');
+        var chats=dom.getElementsByTagName("chat");
+        for(var i=0 ; i < chats.length;i++){
+          var chat=function(text,vpos){
+            this.text=text;
+            this.vpos=vpos;
+            this.lastY=0;
+            this.width=-1;
+          }
+          result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos")));
+        }
+        result.sort(function(a,b){a.vpos-b.vpos;});
+        return result;
+      }
+      function GetChatXML(callback){
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function() {
+          if (req.readyState == 4) {
+            if (req.status == 200) {
+              callback(req.responseText);
+              }
+            }
+          }
+        req.open('GET',CommentSource,true);
+        req.send(null);
+      }
+      Comments="";
+      GetChatXML(function(xml) {
+        Comments=ParseComment(xml);
+        setInterval('WriteComment()',33);
+      }
+);
+//]]>
+    </script>
+  </body>
+</html>
+
