@@ -33,5 +33,3 @@ foreach my $dir (@dirs){
 }
 
 print "Status: 404 Not Found\n\n";
-
-

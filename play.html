@@ -11,7 +11,7 @@
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;" >
-      <video style="position:absolute;z-index:1;" autoplay controls>
+      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
@@ -21,6 +21,7 @@
       <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
       <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()">コメント非表示</a>
       <a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>
+      <span id="message" style="color:#888;"></span>
     </div>
     <script>
 //<![CDATA[
@@ -31,6 +32,43 @@
       FullScreenSetting=1;
       ApplyFullScreenSetting();
       window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
+      var OriginalCoord;
+      SetTouchEvent();
+      function Coord(x,y){this.x=x;this.y=y;}
+      function SetTouchEvent(){
+        var video1=document.getElementsByTagName("video")[0];
+        var target=document.body;
+        video1.addEventListener('touchstart', function(event) {
+          video1.pause();
+          var msgp=document.getElementById("message");
+          OriginalCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+        },false);
+        video1.addEventListener('touchmove', function(event) {
+          event.preventDefault();
+          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          var msgp=document.getElementById("message");
+          msgp.innerText=GetSecond(currentCoord,OriginalCoord)+"秒移動";
+        },false);
+        video1.addEventListener('touchend', function(event) {
+          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          var msgp=document.getElementById("message");
+          msgp.innerText="";
+          var sec=GetSecond(currentCoord,OriginalCoord);
+          if(Math.abs(sec)>0){
+            video1.currentTime+=sec;
+          }
+          video1.play();
+        },false);
+      }
+      function ResizeOnPause(){
+        if(FullScreenSetting==2){SetSizeFullControlable();}
+      }
+      function ResizeOnPlay(){
+        if(FullScreenSetting==2){SetSizeFull();}
+      }
+      function GetSecond(orgcoord,crtcoord){
+        return Math.floor(-(crtcoord.x-orgcoord.x)*0.1);
+      }
       function SetFullScreenCancel(){
         exitFullscreen();
         var btn=document.getElementById("toggle_fullscreen");
@@ -78,6 +116,13 @@
         else{SetSizeDefault();}
       }
       function SetSizeFull(){
+        var w=window.innerWidth;
+        var h=window.innerHeight;
+        var hc=document.getElementById("controler").offsetHeight;
+        //SetSize(w,h-hc);
+        if(w/855*481+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
+      }
+      function SetSizeFullControlable(){
         var w=window.innerWidth;
         var h=window.innerHeight;
         var hc=document.getElementById("controler").offsetHeight;
@@ -149,13 +194,14 @@
         var shitacnt=[];
         context1.font=height+"px 'ＭＳ ゴシック'";
 	        
-        var cmDuration=400;//コメントが表示される時間を変更するにはここを変更。10msec単位。
+        var cmDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
         var occupiedPlaces=[];
 //        for(var i=Comments.length-1;i>=0;i--){
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
-          if(time * 100-cmDuration<comment.vpos && comment.vpos < time *100 +cmDuration*0){
-//          if(comment.vpos < time *100 +cmDuration*2){
+//          var cvpos=comment.vpos>video1.duration-cmDuration?video1.duration-cmDuration:comment.vpos;
+          var cvpos=Math.min(comment.vpos,video1.duration*100-cmDuration*0.5);
+          if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             var occupiedPlace=function(rx,y,width,height,orgx,p){
               this.x=rx;
               this.y=y;
@@ -166,7 +212,8 @@
             };
 
             var heightScale=1;
-            if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
+            if(comment.fontScale>0){heightScale=comment.fontScale;}
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=1.5;}
             context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
 
@@ -190,7 +237,8 @@
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
                 context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
-                comment.width=canvas1.width;
+                comment.width=context1.measureText(comment.text).width;
+                r.x=canvas1.width/2.0 - comment.width/2.0;
               }
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
@@ -213,17 +261,18 @@
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
                 context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
-                comment.width=canvas1.width;
+                comment.width=context1.measureText(comment.text).width;
+                r.x=canvas1.width/2.0 - comment.width/2.0;
               }
-
             }else{
-              var p=((comment.vpos-time * 100)/cmDuration)+1;
+              var p=((cvpos-time * 100)/cmDuration)+1;
               var x=p*canvas1.width-comment.width;
               var r=GetFromOccupied(occupiedPlaces,x,comment.lastY,comment.width,height,p,canvas1.height);
               comment.lastY=r.y;
               occupiedPlaces.push(new occupiedPlace(r.x,r.y,comment.width,height,x,p));
               //if(r.x>canvas1.width){next;}
             }
+            comment.fontScale=heightScale;
 
             r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
@@ -239,7 +288,7 @@
       }
       function ContainsCommand(mail,key){
         if(mail==null || mail==""){return false;}
-        var mails=mail.spliy(" ");
+        var mails=mail.split(" ");
         for(var i=0;i<mails.length;i++){
           if(mails[i]==key){return true;}
         }
@@ -314,6 +363,7 @@
             this.lastY=-1;
             this.width=-1;
             this.lastCnt=-1;
+            this.fontScale=-1;
           }
           var chatT=chats[i];
           var atdeleted=chats[i].getAttribute("deleted");

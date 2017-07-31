@@ -50,6 +50,8 @@ foreach my $url (@url) {
         my $filetmp = File::Spec->catfile($chdir , "tmp.$ext");
         unlink $filetmp if -e $filetmp;
         next if -e $file;
+        my @testfile=glob("\"".File::Spec->catfile($chdir , "$video_id.*.$ext")."\"" );
+        next if @testfile+0 >0;
 
         if(-e $fileold ) {
             rename $fileold,$file;
@@ -59,18 +61,20 @@ foreach my $url (@url) {
         warn "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
+            my $vurl= $client->prepare_download($video_id);
+            if ($vurl=~ /low$/){die "low quality";}
             $client->download($video_id, sub {
                 my ($data, $res, $proto) = @_;
                 print {$fh} $data;
 	        });
           rename $filetmp,$file;
+          sleep 5;
         };
         if ($@) {
           warn "ERROR: $@\n";
           unlink $filetmp;
           next;
         }
-        sleep 5;
     }
 }
 
