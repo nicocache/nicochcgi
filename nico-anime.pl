@@ -43,7 +43,7 @@ foreach my $url (@url) {
         my $chdir=File::Spec->catfile($animedir , $chid );
         if(! -d $chdir){mkdir $chdir;}
 
-        $title=~ s/\\\\:\,\l\*\?\"\<\>\|//g;
+        $title=~ s/[\/\\\:\,\;\*\?\"\<\>\|]//g;
 
         my $fileold = File::Spec->catfile($chdir , "$video_id.$ext");
         my $file = File::Spec->catfile($chdir , "$video_id.$title.$ext");
@@ -68,8 +68,8 @@ foreach my $url (@url) {
                 print {$fh} $data;
 	        });
           rename $filetmp,$file;
-          sleep 5;
         };
+        sleep 10;
         if ($@) {
           warn "ERROR: $@\n";
           unlink $filetmp;
