@@ -36,7 +36,13 @@
       SetTouchEvent();
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
-console.log(e.keyCode);
+        var video1=document.getElementsByTagName("video")[0];
+        if(e.keyCode==37){video1.currentTime-=10;}
+        else if(e.keyCode==39){video1.currentTime+=10;}
+        else if(e.keyCode==38){video1.volume=Math.min(video1.volume+0.1,1.0);}
+        else if(e.keyCode==40){video1.volume=Math.max(video1.volume-0.1,0.0);}
+        else if(e.keyCode==32 && video1.paused){video1.play();}
+        else if(e.keyCode==32){video1.pause();}
       }
       function SetTouchEvent(){
         var video1=document.getElementsByTagName("video")[0];
@@ -234,7 +240,7 @@ console.log(e.keyCode);
             context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
 
             r=new Coordinate(0,0);
-            //if(comment.width<0)
+            if(comment.width<0)
               {comment.width=context1.measureText(comment.text).width;}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
@@ -253,14 +259,15 @@ console.log(e.keyCode);
               rangesUe.push(new range(r.y,height*heightScale));
               comment.lastY=r.y/canvas1.width;
 
-              r.y+=height*(heightScale-1);
-
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
-                context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
+                var fsize=Math.max(height*heightScale,1);
+                heightScale=fsize/height;
+                context1.font=fsize+"px 'ＭＳ ゴシック'";
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
+              r.y+=height*(heightScale-1);
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
