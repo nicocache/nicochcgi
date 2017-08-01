@@ -247,13 +247,17 @@
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
+              var changed=false;
               while(! CheckRanges(rangesUe,new range(r.y,height*heightScale))){
                 r.y+=height*heightScale;
+                changed=true;
               }
-              for(var key in rangesUe){
-                var crtr=rangesUe[key];
-                if(crtr.b<r.y && CheckRanges(rangesUe,new range(crtr.b,height*heightScale))){
-                  r.y=crtr.b;
+              if(changed){
+                for(var key in rangesUe){
+                  var crtr=rangesUe[key];
+                  if(crtr.b<r.y && CheckRanges(rangesUe,new range(crtr.b,height*heightScale))){
+                    r.y=crtr.b;
+                  }
                 }
               }
               rangesUe.push(new range(r.y,height*heightScale));
@@ -274,13 +278,17 @@
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
+              var changed=false;
               while(! CheckRanges(rangesShita,new range(r.y,height*heightScale))){
                 r.y+=height*heightScale;
+                changed=true;
               }
-              for(var key in rangesShita){
-                var crtr=rangesShita[key];
-                if(crtr.b<r.y && CheckRanges(rangesShita,new range(crtr.b,height*heightScale))){
-                  r.y=crtr.b;
+              if(changed){
+                for(var key in rangesShita){
+                  var crtr=rangesShita[key];
+                  if(crtr.b<r.y && CheckRanges(rangesShita,new range(crtr.b,height*heightScale))){
+                    r.y=crtr.b;
+                  }
                 }
               }
               rangesShita.push(new range(r.y,height*heightScale));
