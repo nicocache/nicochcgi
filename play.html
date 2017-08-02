@@ -166,7 +166,6 @@
         canvas1.style.height=height+"px";
         video1.style.height=height+"px";
         video1.height=height;
-//        canvas1.height=canvas1.width*height/width;
         canvas1.height=height*window.devicePixelRatio;
       }
       function ToggleBackground(){
@@ -218,7 +217,7 @@
 
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
-        context1.font=height+"px 'ＭＳ ゴシック'";
+        context1.font=GetFontText(height,1);
 
         var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
         var rangesUe=[];
@@ -227,10 +226,8 @@
         var cmDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
         var occupiedPlaces=[];
         var operatedComments=[];
-//        for(var i=Comments.length-1;i>=0;i--){
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
-//          var cvpos=Math.min(comment.vpos,video1.duration*100-cmDuration*0.5);
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             var occupiedPlace=function(rx,y,width,height,orgx,p){
@@ -246,7 +243,7 @@
             if(comment.fontScale>0){heightScale=comment.fontScale;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=1.5;}
-            context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
+            context1.font=GetFontText(height,heightScale);
 
             r=new Coordinate(0,0);
 //            if(comment.width<0)
@@ -276,7 +273,7 @@
                 heightScale*=canvas1.width/comment.width;
                 var fsize=Math.max(height*heightScale,1);
                 heightScale=fsize/height;
-                context1.font=fsize+"px 'ＭＳ ゴシック'";
+                context1.font=GetFontText(fsize,1);
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
@@ -308,22 +305,16 @@
 
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
-                context1.font=(height*heightScale)+"px 'ＭＳ ゴシック'";
+                context1.font=GetFontText(height,heightScale);
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
             }else{
-/*
-              var p=((cvpos-time * 100)/cmDuration)+1;
-              var x=p*canvas1.width-comment.width;
-              var r=GetFromOccupied(occupiedPlaces,x,comment.lastY*canvas1.width,comment.width,height,p,canvas1.width);
-*/
               var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height);
               comment.lastY=r.y/canvas1.width;
               operatedComments.push(comment);
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
-//              occupiedPlaces.push(new occupiedPlace(r.x,r.y,comment.width,height,x,p));
               //if(r.x>canvas1.width){next;}
             }
             comment.fontScale=heightScale;
@@ -342,8 +333,9 @@
           }
         }
       }
-var count=0;
-var count2=0;
+      function GetFontText(height,heightScale){
+        return (height*heightScale)+"px 'ＭＳ ゴシック'";
+      }
       function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight){
         var cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
         var ry=Math.max(0,comment.lastY*canvasWidth);
@@ -355,8 +347,6 @@ var count2=0;
           var b=GetCommentX(cvpos2,cvpos,opCom.width,canvasWidth,cmDuration) + opCom.width;
           var c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
           var d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
-//if(count<100){count++;console.log(a+" , "+b+" , "+c+" , "+d);}
-//if(count<100){count++;console.log(comment.text);}
           if(
             CheckY(ry,fontHeight,opCom.lastY*canvasWidth) &&
                 (! ( ( (b<canvasWidth) && (0<a) ) && ( (c<canvasWidth) && (0<d) ) ) )
@@ -407,50 +397,8 @@ var count2=0;
         return "#ffffff";
       }
       function Coordinate(x,y){this.x=x;this.y=y;}
-      function GetFromOccupied(occupieds,x,y,w,fontHeight,p,canvasWidth){
-        if(y<0){y=0;}
-        //if(y>0){return new cord(x,y);}
-        var result=new Coordinate(x,y);
-        var checked=false;
-        var i=0
-        while(i<occupieds.length){
-          var current=occupieds[i];
-//          if(CheckCollision2(current,result,fontHeight,w,p,canvasWidth)){
-          if(CheckCollision(current,result,fontHeight,w)){
-            i=-1;
-            if(!checked && result.y>0){
-              result.y=0;
-              //result.y-=fontHeight;
-              checked=true;
-            }else{
-              result.y+=fontHeight;
-              checked=true;
-            }
-          }
-          i++;
-        }
-        result.x+=w*p;
-        return result;
-      }
-      function CheckCollision2(current,result,fontHeight,w,p,canvasWidth){
-        var cw=current.width;
-        var cx=current.orgx;
-        var rx=result.x;
-        var t=rx*p;
-        return CheckY(current.y,fontHeight,result.y)
-//(current.y-fontHeight<result.y && result.y<current.y+fontHeight)
-          && (rx<cx+cw*(1+p) && cx<rx+w*2);
-      }
       function CheckY(y1,fontHeight,y2){
         return y1-fontHeight < y2 && y2 < y1+fontHeight;
-      }
-      function CheckCollision(current,result,fontHeight,w){
-        var cw=current.width;
-        var cx=current.orgx;
-        var rx=result.x;
-        return CheckY(current.y,fontHeight,result.y)
-//        return (current.y-fontHeight<result.y && result.y<current.y+fontHeight)
-          && (current.orgx<result.x+w*2 && result.x< current.orgx+cw*2);
       }
       function ParseComment(xml){
         var result=[];
