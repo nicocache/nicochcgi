@@ -14,7 +14,7 @@ my @dirs=glob $conf{"dlhome"}."/*";
 
 foreach my $dir (@dirs){
   if(-d $dir){
-    if(basename($dir) ne $form{"c"}){
+    if(defined($form{"c"}) && basename($dir) ne $form{"c"}){
       next;
     }
     my @files=glob $dir."\/*";
