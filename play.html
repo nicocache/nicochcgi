@@ -11,7 +11,7 @@
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;" >
-      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();">
+      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
@@ -19,21 +19,29 @@
 　　--><div id="controler">
       <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
       <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
-      <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()">コメント非表示</a>
+      <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
       <a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>
+      <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
       <span id="message" style="color:#888;"></span>
     </div>
     <script>
 //<![CDATA[
+      var CommentTimer;
       CommentSource="";
-      ShowComment=true;
+      ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
+      ShowComment=!ShowComment;
+      ToggleComment();
       SetFromLocationHash();
-      DarkBackground=true;
+      Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
+      ApplyBackgroundSetting();
       FullScreenSetting=1;
       ApplyFullScreenSetting();
       window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
       var OriginalCoord;
       SetTouchEvent();
+      var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
+      SetFpsDisplay();
+
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
         var video1=document.getElementsByTagName("video")[0];
@@ -43,6 +51,21 @@
         else if(e.keyCode==40){video1.volume=Math.max(video1.volume-0.1,0.0);}
         else if(e.keyCode==32 && video1.paused){video1.play();}
         else if(e.keyCode==32){video1.pause();}
+      }
+      function ToggleFps(){
+        if(Fps==60){Fps=15;}
+        else if(Fps==15){Fps=24;}
+        else if(Fps==24){Fps=30;}
+        else if(Fps==30){Fps=60;}
+        else{Fps=60;}
+        localStorage.setItem("niconico_comment_Fps",Fps);
+        SetFpsDisplay();
+        clearInterval(CommentTimer);
+        CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+      }
+      function SetFpsDisplay(){
+        var abutton=document.getElementById("toggle_fps");
+        abutton.innerText=Fps+"Fps";
       }
       function SetTouchEvent(){
         var video1=document.getElementsByTagName("video")[0];
@@ -74,6 +97,10 @@
       }
       function ResizeOnPlay(){
         if(FullScreenSetting==2){SetSizeFull();}
+      }
+      function VolumeChange(from){
+        var storage=localStorage;
+        storage.setItem("niconico_volume",from.volume);
       }
       function GetSecond(orgcoord,crtcoord){
         return Math.floor(-(crtcoord.x-orgcoord.x)*0.1);
@@ -129,7 +156,7 @@
         var h=window.innerHeight;
         var hc=document.getElementById("controler").offsetHeight;
         //SetSize(w,h-hc);
-        if(w/855*481+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
+        if(w/(16/9)+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
       }
       function SetSizeFullControlable(){
         var w=window.innerWidth;
@@ -139,11 +166,11 @@
       }
       function SetSizeFullFixed(){
         var w=window.innerWidth;
-        var h=window.innerWidth/855*481;
+        var h=window.innerWidth/(16/9);
         var hc=document.getElementById("controler").offsetHeight;
         if(h+hc>window.innerHeight){
           h=window.innerHeight-hc;
-          w=h/481*855;
+          w=h*(16/9);
         }
         SetSize(w,h);
       }
@@ -169,19 +196,27 @@
         canvas1.height=height*window.devicePixelRatio;
       }
       function ToggleBackground(){
-        DarkBackground=!DarkBackground;
-        if(DarkBackground){document.body.style.backgroundColor="black";}
-        else{document.body.style.backgroundColor="white";}
+        if(Background=="black"){Background="white";}
+        else if(Background=="white"){Background="black";}
+        else{Background="black";}
+        ApplyBackgroundSetting();
+        localStorage.setItem("niconico_background",Background);
+      }
+      function ApplyBackgroundSetting(){
+        document.body.style.backgroundColor=Background;
       }
       function ToggleComment(){
         ShowComment=!ShowComment;
         if(!ShowComment){
+        var storage=localStorage;
           document.getElementById("toggle_comment").innerText="コメント表示";
           var canvas1=document.getElementsByTagName("canvas")[0];
           var context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
         }
         else{document.getElementById("toggle_comment").innerText="コメント非表示";}
+
+        localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
       function SetFromLocationHash(){
         //動画・コメントプロキシの設定はここを変更してください。
@@ -194,6 +229,10 @@
         }else{
           video1.src="movie.cgi?v="+id;
         }
+
+        var storage=localStorage;
+        var vol=storage.getItem("niconico_volume");
+        if(vol){ video1.volume= vol;}
       }
       function CheckRanges(ranges,range){
         if(!ranges){return true;}
@@ -206,7 +245,7 @@
       function GetActualVpos(vpos,duration,cmDuration){
         return Math.min(vpos,duration*100-cmDuration*0.5);
       }
-      function WriteComment(){
+      function DrawComment(){
         if(!ShowComment){return;}
         var canvas1=document.getElementsByTagName("canvas")[0];
         var video1=document.getElementsByTagName("video")[0];
@@ -312,6 +351,7 @@
             }else{
               var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height);
               comment.lastY=r.y/canvas1.width;
+              r.y+=height*(heightScale-1);
               operatedComments.push(comment);
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
@@ -439,7 +479,7 @@
       Comments="";
       GetChatXML(function(xml) {
         Comments=ParseComment(xml);
-        setInterval('WriteComment()',33);//描画間隔。30fpsで33、60fpsで16など。
+        CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
       }
 );
 //]]>
