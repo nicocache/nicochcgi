@@ -252,7 +252,9 @@
         var context1=canvas1.getContext('2d');
         context1.clearRect(0,0,canvas1.width,canvas1.height);
 //debug
-//        context1.beginPath();
+/*
+        context1.beginPath();
+*/
 
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
@@ -349,7 +351,7 @@
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
             }else{
-              var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height);
+              var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
               comment.lastY=r.y/canvas1.width;
               r.y+=height*(heightScale-1);
               operatedComments.push(comment);
@@ -380,8 +382,9 @@
       function GetFontText(height,heightScale){
         return (height*heightScale)+"px 'ＭＳ ゴシック'";
       }
-      function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight){
+      function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight,testContext){
         var cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
+ //       if(comment.lastY>=0){return new Coordinate(GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration),comment.lastY*canvasWidth);}
         var ry=Math.max(0,comment.lastY*canvasWidth);
         var firstCollision=true;
         for(var i=0;i<operatedComments.length;i++){
@@ -393,14 +396,23 @@
           var d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
           if(
             CheckY(ry,fontHeight,opCom.lastY*canvasWidth) &&
-                (! ( ( (b<canvasWidth) && (0<a) ) && ( (c<canvasWidth) && (0<d) ) ) )
+                (! ( ( (b<canvasWidth) && (0<a) && (cvpos2<=cvpos) ) || ( (c<canvasWidth) && (0<d) && (cvpos<cvpos2) ) ) )
+//                (! ( ( (b<canvasWidth) && (0<a) ) ) )
             ){
             i=-1;
             if(firstCollision){firstCollision=false;ry=0;}
             else{ry+=fontHeight;}
           }
         }
-        return new Coordinate(GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration),ry);
+      var rx=GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration);
+//debug
+/*
+if(!firstCollision){
+testContext.rect(rx,ry,comment.width,fontHeight);
+testContext.stroke();
+}
+*/
+        return new Coordinate(rx,ry);
       }
       function GetCommentX(cvpos,time,width,canvasWidth,cmDuration){
         return (1-(time-cvpos)/cmDuration)*(canvasWidth+width)-width;
@@ -442,7 +454,7 @@
       }
       function Coordinate(x,y){this.x=x;this.y=y;}
       function CheckY(y1,fontHeight,y2){
-        return y1-fontHeight < y2 && y2 < y1+fontHeight;
+        return y1-fontHeight/2.0 < y2 && y2 < y1+fontHeight/2.0;
       }
       function ParseComment(xml){
         var result=[];
