@@ -209,12 +209,12 @@
         ShowComment=!ShowComment;
         if(!ShowComment){
         var storage=localStorage;
-          document.getElementById("toggle_comment").innerText="コメント表示";
+          document.getElementById("toggle_comment").innerText="コメント非表示";
           var canvas1=document.getElementsByTagName("canvas")[0];
           var context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
         }
-        else{document.getElementById("toggle_comment").innerText="コメント非表示";}
+        else{document.getElementById("toggle_comment").innerText="コメント表示";}
 
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
@@ -360,16 +360,20 @@
             comment.fontScale=heightScale;
 
             var modnum=(canvas1.height-height+1);
+            var alpha=1.0;
+            if(r.y>modnum){alpha=0.5;}
             r.y=(r.y%modnum+modnum)%modnum;
             //r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなのでコメントアウト中。
             //var commenttext=comment.text.replace("\\","＼");
             var commenttext=comment.text;
+            context1.globalAlpha=alpha;
             context1.fillStyle=GetColorFromMail(comment.mail);
-            context1.strokeStyle ="#000";
+            context1.strokeStyle ="#000000";
             context1.fillText(commenttext,r.x,r.y+height);
             context1.strokeText(commenttext,r.x,r.y+height);
+            context1.globalAlpha=1.0;
           }
         }
       }

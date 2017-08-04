@@ -17,6 +17,13 @@ print <<"EOF";
 <p>
 EOF
 
+my $referer = $ENV{'HTTP_REFERER'};
+my $srvAddr = $ENV{'SERVER_ADDR'};
+if(!$referer || ! $referer=~ m/^https?:\/$srvAddr\//) {
+    print "Referer error:".$referer;
+    die;
+}
+
 if($ENV{'REQUEST_METHOD'} eq "POST"){
 my $q=new CGI;
 my $op=$q->param('op');
