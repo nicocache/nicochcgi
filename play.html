@@ -342,7 +342,8 @@
 
               comment.lastY=r.y/canvas1.width;
 
-              r.y=canvas1.height-r.y-height;
+              var ch=canvas1.height-height;
+              r.y=ch-r.y%ch+Math.floor(r.y/ch)*ch;;
 
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
@@ -350,10 +351,14 @@
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
+/*
+context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
+context1.stroke();
+*/
             }else{
               var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
               comment.lastY=r.y/canvas1.width;
-              r.y+=height*(heightScale-1);
+              r.y+=height*(heightScale-1)/2.0;
               operatedComments.push(comment);
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
@@ -364,7 +369,9 @@
             var modnum=(canvas1.height-height+1);
             var alpha=1.0;
             if(r.y>modnum){alpha=0.5;}
-            r.y=(r.y%modnum+modnum)%modnum;
+            r.y=r.y%modnum;
+            r.y+=height;
+            //r.y=(r.y%modnum+modnum)%modnum;
             //r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなのでコメントアウト中。
@@ -373,8 +380,8 @@
             context1.globalAlpha=alpha;
             context1.fillStyle=GetColorFromMail(comment.mail);
             context1.strokeStyle ="#000000";
-            context1.fillText(commenttext,r.x,r.y+height);
-            context1.strokeText(commenttext,r.x,r.y+height);
+            context1.fillText(commenttext,r.x,r.y);
+            context1.strokeText(commenttext,r.x,r.y);
             context1.globalAlpha=1.0;
           }
         }
@@ -462,10 +469,11 @@ testContext.stroke();
         var dom=parser.parseFromString(xml, 'text/xml');
         var chats=dom.getElementsByTagName("chat");
         for(var i=0 ; i < chats.length;i++){
-          var chat=function(text,vpos,mail){
+          var chat=function(text,vpos,mail,cnt){
             this.text=text;
             this.vpos=vpos;
             this.mail=mail;
+            this.count=cnt;
             this.lastY=-1;
             this.width=-1;
             this.lastCnt=-1;
@@ -474,10 +482,13 @@ testContext.stroke();
           var chatT=chats[i];
           var atdeleted=chats[i].getAttribute("deleted");
           if(atdeleted==0 || atdeleted==null){
-            result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail")));
+            result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail"),i));
           }
         }
-        result.sort(function(a,b){return a.vpos-b.vpos;});
+        result.sort(function(a,b){
+          if(a.vpos==b.vpos){return a.count>b.count?1:-1;}
+          return a.vpos-b.vpos;
+        });
         return result;
       }
       function GetChatXML(callback){
