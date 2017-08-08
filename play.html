@@ -175,7 +175,8 @@
         SetSize(w,h);
       }
       function SetSizeDefault(){
-        SetSize(855,481);
+        var w=Math.min(window.innerWidth,855);
+        SetSize(w,w/855.0*481.0);
       }
       function SetSize(width,height){
         var videoDiv1= document.getElementById("VideoPlayer");
