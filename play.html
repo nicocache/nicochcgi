@@ -274,6 +274,7 @@
           var comment=Comments[i];
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
+            if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){next;}
             var occupiedPlace=function(rx,y,width,height,orgx,p){
               this.x=rx;
               this.y=y;
