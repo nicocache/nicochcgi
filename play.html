@@ -259,7 +259,9 @@
 
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
-        context1.font=GetFontText(height,1);
+        var fontWeight=600;
+        var fontName='Arial, '+'"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic';
+        context1.font=GetFontText(height,1,fontName,fontWeight);
 
         var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
         var rangesUe=[];
@@ -285,8 +287,16 @@
             if(comment.fontScale>0){heightScale=comment.fontScale;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=1.5;}
-            context1.font=GetFontText(height,heightScale);
 
+            if(comment.mail!=null && ContainsCommand(comment.mail,"mincho")){
+              fontName='"ヒラギノ明朝 ProN W3", HiraMinProN-W3, "ヒラギノ明朝 ProN", HiraMinProN, "Hiragino Mincho ProN"'+','+'"游明朝体", "游明朝", "Yu Mincho", YuMincho, yumincho, YuMin-Medium'+','+"'serif'";
+              fontWeight=300;
+            }else if(comment.mail!=null && ContainsCommand(comment.mail,"gothic")){
+              fontName='"ヒラギノ角ゴシック", "Hiragino Sans", HiraginoSans'+','+'"游ゴシック体", "游ゴシック", "Yu Gothic", YuGothic, yugothic, YuGo-Medium'+','+'sans-serif';
+              fontWeight=300;
+            }
+
+            context1.font=GetFontText(height,heightScale,fontName,fontWeight);
             r=new Coordinate(0,0);
 //            if(comment.width<0)
               {comment.width=context1.measureText(comment.text).width;}
@@ -315,7 +325,7 @@
                 heightScale*=canvas1.width/comment.width;
                 var fsize=Math.max(height*heightScale,1);
                 heightScale=fsize/height;
-                context1.font=GetFontText(fsize,1);
+                context1.font=GetFontText(fsize,1,fontName,fontWeight);
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
@@ -348,7 +358,7 @@
 
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
-                context1.font=GetFontText(height,heightScale);
+                context1.font=GetFontText(height,heightScale,fontName,fontWeight);
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
@@ -387,8 +397,8 @@ context1.stroke();
           }
         }
       }
-      function GetFontText(height,heightScale){
-        return (height*heightScale)+"px 'ＭＳ ゴシック'";
+      function GetFontText(height,heightScale,fontName,fontWeight){
+        return fontWeight+" "+(height*heightScale)+"px "+fontName;
       }
       function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight,testContext){
         var cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
@@ -458,6 +468,13 @@ testContext.stroke();
         if(ContainsCommand(mail,"purple2") || ContainsCommand(mail,"nobleviolet")){return "#6633cc";}
         if(ContainsCommand(mail,"black2")){return "#666666";}
         
+        if(mail==null || mail==""){return false;}
+        var reg=new RegExp(/#[0-9A-fA-F]{6}/);
+        var mails=mail.split(" ");
+        for(var i=0;i<mails.length;i++){
+          if(reg.test(mails[i])){return mails[i];}
+        }
+
         return "#ffffff";
       }
       function Coordinate(x,y){this.x=x;this.y=y;}
@@ -473,7 +490,11 @@ testContext.stroke();
           var chat=function(text,vpos,mail,cnt){
             this.text=text;
             this.vpos=vpos;
-            this.mail=mail;
+            if(mail!=null){
+              this.mail=mail.toLowerCase();
+            }else{
+              this.mail=mail;
+            }
             this.count=cnt;
             this.lastY=-1;
             this.width=-1;
