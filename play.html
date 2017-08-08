@@ -260,7 +260,7 @@
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
         var fontWeight=600;
-        var fontName='Arial, '+'"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic';
+        var fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
         context1.font=GetFontText(height,1,fontName,fontWeight);
 
         var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
@@ -391,9 +391,12 @@ context1.stroke();
             var commenttext=comment.text;
             context1.globalAlpha=alpha;
             context1.fillStyle=GetColorFromMail(comment.mail);
-            context1.strokeStyle ="#000000";
+            context1.textBaseline="alphabetic";
+            context1.shadowColor="#000000";
+            context1.shadowOffsetX=0;
+            context1.shadowOffsetY=0;
+            context1.shadowBlur=8;
             context1.fillText(commenttext,r.x,r.y);
-            context1.strokeText(commenttext,r.x,r.y);
             context1.globalAlpha=1.0;
           }
         }
