@@ -319,9 +319,7 @@
                   }
                 }
               }
-              rangesUe.push(new range(r.y,height*heightScale));
               comment.lastY=r.y/canvas1.width;
-
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
                 var fsize=Math.max(height*heightScale,1);
@@ -330,6 +328,8 @@
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
+              rangesUe.push(new range(r.y,height*heightScale));
+
               r.y+=height*(heightScale-1);
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
@@ -350,12 +350,7 @@
                   }
                 }
               }
-              rangesShita.push(new range(r.y,height*heightScale));
-
               comment.lastY=r.y/canvas1.width;
-
-              var ch=canvas1.height-height;
-              r.y=ch-r.y%ch+Math.floor(r.y/ch)*ch;;
 
               if(comment.width>canvas1.width){
                 heightScale*=canvas1.width/comment.width;
@@ -367,6 +362,10 @@
 context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
 context1.stroke();
 */
+              rangesShita.push(new range(r.y,height*heightScale));
+
+              var ch=canvas1.height-height;
+              r.y=ch-r.y%ch+Math.floor(r.y/ch)*ch;;
             }else{
               var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
               comment.lastY=r.y/canvas1.width;
@@ -374,13 +373,12 @@ context1.stroke();
               operatedComments.push(comment);
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
-              //if(r.x>canvas1.width){next;}
             }
             comment.fontScale=heightScale;
 
             var modnum=(canvas1.height-height+1);
             var alpha=1.0;
-            if(r.y>modnum){alpha=0.5;}
+            if(r.y>modnum){alpha=0.7;}
             r.y=r.y%modnum;
             r.y+=height;
             //r.y=(r.y%modnum+modnum)%modnum;
@@ -390,9 +388,14 @@ context1.stroke();
             //var commenttext=comment.text.replace("\\","＼");
             var commenttext=comment.text;
             context1.globalAlpha=alpha;
-            context1.fillStyle=GetColorFromMail(comment.mail);
+            var fillColor=GetColorFromMail(comment.mail);
+            context1.fillStyle=fillColor;
             context1.textBaseline="alphabetic";
-            context1.shadowColor="#000000";
+            if(alpha==1.0){
+              context1.shadowColor= fillColor=="#000000" ? "#ffffff" : "#000000";
+            }else{
+              context1.shadowColor= "transparent";
+            }
             context1.shadowOffsetX=0;
             context1.shadowOffsetY=0;
             context1.shadowBlur=8;
