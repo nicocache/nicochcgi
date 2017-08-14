@@ -299,6 +299,8 @@
 
             context1.font=GetFontText(height,heightScale,fontName,fontWeight);
             r=new Coordinate(0,0);
+            var overflow=false;
+            var modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
               {comment.width=context1.measureText(comment.text).width;}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
@@ -330,7 +332,9 @@
               }
               rangesUe.push(new range(r.y,height*heightScale));
 
-              r.y+=height*(heightScale-1);
+//              r.y+=height*(heightScale-1);
+              context1.textBaseline="top";
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
@@ -364,34 +368,33 @@ context1.stroke();
 */
               rangesShita.push(new range(r.y,height*heightScale));
 
-              var ch=canvas1.height-height;
-              r.y=ch-r.y%ch+Math.floor(r.y/ch)*ch;;
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
+              r.y=canvas1.height-r.y;
+
+              context1.textBaseline="bottom";
             }else{
               var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
               comment.lastY=r.y/canvas1.width;
-              r.y+=height*(heightScale-1)/2.0;
+//              r.y+=height*(heightScale-1)/2.0;
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
+              r.y+=height/2.0;
               operatedComments.push(comment);
+              context1.textBaseline="middle";
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
             }
             comment.fontScale=heightScale;
 
-            var modnum=(canvas1.height-height+1);
-            var alpha=1.0;
-            if(r.y>modnum){alpha=0.7;}
-            r.y=r.y%modnum;
-            r.y+=height;
             //r.y=(r.y%modnum+modnum)%modnum;
             //r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなのでコメントアウト中。
             //var commenttext=comment.text.replace("\\","＼");
             var commenttext=comment.text;
-            context1.globalAlpha=alpha;
+            context1.globalAlpha=overflow?0.7:1.0;
             var fillColor=GetColorFromMail(comment.mail);
             context1.fillStyle=fillColor;
-            context1.textBaseline="alphabetic";
-            if(alpha==1.0){
+            if(!overflow){
               context1.shadowColor= fillColor=="#000000" ? "#ffffff" : "#000000";
             }else{
               context1.shadowColor= "transparent";
