@@ -2,7 +2,7 @@
 ニコニコチャンネルの自動キャッシュサーバー
 
 ## demo
-[デモ](https://kuremako.github.io/play.html#0)  
+[デモ](https://nicocache.github.io/play.html#0)  
 最新版とは限りません。静的サイト版。
 
 ## about
