@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ニコニコ動画プレイヤー</title>
+    <style type="text/css">
+      a.button{display: inline-block;padding: 0.3em 0.5em;text-decoration: none;background: #888;color: #FFF;border-radius: 3px;}
+    </style>
+  </head>
+  <body style="background-color:black;margin:0;overflow:hidden;">
+    <div id="VideoPlayer" style="margin:0 auto;position:relative;" >
+      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);">
+      </video>
+      <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
+      </canvas>
+    </div><!--
+　　--><div id="controler">
+      <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
+      <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
+      <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
+      <a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>
+      <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
+      <span id="message" style="color:#888;"></span>
+    </div>
+    <script>
+//<![CDATA[
+      var CommentTimer;
+      CommentSource="";
+      ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
+      ShowComment=!ShowComment;
+      ToggleComment();
+      SetFromLocationHash();
+      Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
+      ApplyBackgroundSetting();
+      FullScreenSetting=1;
+      ApplyFullScreenSetting();
+      window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
+      var OriginalCoord;
+      SetTouchEvent();
+      var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
+      SetFpsDisplay();
+
+      function Coord(x,y){this.x=x;this.y=y;}
+      document.onkeydown = function (e){
+        var video1=document.getElementsByTagName("video")[0];
+        if(e.keyCode==37){video1.currentTime-=10;}
+        else if(e.keyCode==39){video1.currentTime+=10;}
+        else if(e.keyCode==38){video1.volume=Math.min(video1.volume+0.1,1.0);}
+        else if(e.keyCode==40){video1.volume=Math.max(video1.volume-0.1,0.0);}
+        else if(e.keyCode==32 && video1.paused){video1.play();}
+        else if(e.keyCode==32){video1.pause();}
+      }
+      function ToggleFps(){
+        if(Fps==60){Fps=15;}
+        else if(Fps==15){Fps=24;}
+        else if(Fps==24){Fps=30;}
+        else if(Fps==30){Fps=60;}
+        else{Fps=60;}
+        localStorage.setItem("niconico_comment_Fps",Fps);
+        SetFpsDisplay();
+        clearInterval(CommentTimer);
+        CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+      }
+      function SetFpsDisplay(){
+        var abutton=document.getElementById("toggle_fps");
+        abutton.innerText=Fps+"Fps";
+      }
+      function SetTouchEvent(){
+        var video1=document.getElementsByTagName("video")[0];
+        var target=document.body;
+        video1.addEventListener('touchstart', function(event) {
+          video1.pause();
+          var msgp=document.getElementById("message");
+          OriginalCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+        },false);
+        video1.addEventListener('touchmove', function(event) {
+          event.preventDefault();
+          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          var msgp=document.getElementById("message");
+          msgp.innerText=GetSecond(currentCoord,OriginalCoord)+"秒移動";
+        },false);
+        video1.addEventListener('touchend', function(event) {
+          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          var msgp=document.getElementById("message");
+          msgp.innerText="";
+          var sec=GetSecond(currentCoord,OriginalCoord);
+          if(Math.abs(sec)>0){
+            video1.currentTime+=sec;
+          }
+          video1.play();
+        },false);
+      }
+      function ResizeOnPause(){
+        if(FullScreenSetting==2){SetSizeFullControlable();}
+      }
+      function ResizeOnPlay(){
+        if(FullScreenSetting==2){SetSizeFull();}
+      }
+      function VolumeChange(from){
+        var storage=localStorage;
+        storage.setItem("niconico_volume",from.volume);
+      }
+      function GetSecond(orgcoord,crtcoord){
+        return Math.floor(-(crtcoord.x-orgcoord.x)*0.1);
+      }
+      function SetFullScreenCancel(){
+        exitFullscreen();
+        var btn=document.getElementById("toggle_fullscreen");
+        btn.onclick=SetFullScreen;
+      }
+      function SetFullScreen(){
+        requestFullscreen();
+        FullScreenSetting=2;
+        ApplyFullScreenSetting();
+        var btn=document.getElementById("toggle_fullscreen");
+        btn.onclick=SetFullScreenCancel;
+      }
+      function requestFullscreen() {
+        var target=document.body;
+        if (target.webkitRequestFullscreen) {
+          target.webkitRequestFullscreen();
+        } else if (target.mozRequestFullScreen) {
+          target.mozRequestFullScreen();
+        } else if (target.msRequestFullscreen) {
+          target.msRequestFullscreen();
+        } else if (target.requestFullscreen) {
+          target.requestFullscreen();
+        }
+      }
+      function exitFullscreen() {
+        if (document.webkitCancelFullScreen) {
+          document.webkitCancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        } else if(document.cancelFullScreen) {
+          document.cancelFullScreen();
+        } else if(document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+      function ToggleFullScreen(){
+        FullScreenSetting=(FullScreenSetting+1)%3;
+        ApplyFullScreenSetting();
+      }
+      function ApplyFullScreenSetting(){
+        if(FullScreenSetting==1){SetSizeFullFixed();}
+        else if(FullScreenSetting==2){SetSizeFull();}
+        else{SetSizeDefault();}
+      }
+      function SetSizeFull(){
+        var w=window.innerWidth;
+        var h=window.innerHeight;
+        var hc=document.getElementById("controler").offsetHeight;
+        //SetSize(w,h-hc);
+        if(w/(16/9)+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
+      }
+      function SetSizeFullControlable(){
+        var w=window.innerWidth;
+        var h=window.innerHeight;
+        var hc=document.getElementById("controler").offsetHeight;
+        SetSize(w,h-hc);
+      }
+      function SetSizeFullFixed(){
+        var w=window.innerWidth;
+        var h=window.innerWidth/(16/9);
+        var hc=document.getElementById("controler").offsetHeight;
+        if(h+hc>window.innerHeight){
+          h=window.innerHeight-hc;
+          w=h*(16/9);
+        }
+        SetSize(w,h);
+      }
+      function SetSizeDefault(){
+        var w=Math.min(window.innerWidth,855);
+        SetSize(w,w/855.0*481.0);
+      }
+      function SetSize(width,height){
+        var videoDiv1= document.getElementById("VideoPlayer");
+        var controler1= document.getElementById("controler");
+        var canvas1=document.getElementsByTagName("canvas")[0];
+        var video1=document.getElementsByTagName("video")[0];
+
+        videoDiv1.style.width=width+"px";
+        canvas1.style.width=width+"px";
+        video1.style.width=width+"px";
+        video1.width=width;
+        canvas1.width=width*window.devicePixelRatio;
+
+        videoDiv1.style.height=height+"px";
+        canvas1.style.height=height+"px";
+        video1.style.height=height+"px";
+        video1.height=height;
+        canvas1.height=height*window.devicePixelRatio;
+      }
+      function ToggleBackground(){
+        if(Background=="black"){Background="white";}
+        else if(Background=="white"){Background="black";}
+        else{Background="black";}
+        ApplyBackgroundSetting();
+        localStorage.setItem("niconico_background",Background);
+      }
+      function ApplyBackgroundSetting(){
+        document.body.style.backgroundColor=Background;
+      }
+      function ToggleComment(){
+        ShowComment=!ShowComment;
+        if(!ShowComment){
+        var storage=localStorage;
+          document.getElementById("toggle_comment").innerText="コメント非表示";
+          var canvas1=document.getElementsByTagName("canvas")[0];
+          var context1=canvas1.getContext('2d');
+          context1.clearRect(0,0,canvas1.width,canvas1.height);
+        }
+        else{document.getElementById("toggle_comment").innerText="コメント表示";}
+
+        localStorage.setItem("niconico_comment_enabled",ShowComment);
+      }
+      function SetFromLocationHash(){
+        //動画・コメントプロキシの設定はここを変更してください。
+        var hash=window.location.hash.split(":");
+        var id=hash[0].slice(1);
+        CommentSource="commentproxy.cgi?id="+id;
+        var video1=document.getElementsByTagName("video")[0];
+        if(hash[1]){
+          video1.src="movie.cgi?c="+hash[1]+"&v="+id;
+        }else{
+          video1.src="movie.cgi?v="+id;
+        }
+
+        var storage=localStorage;
+        var vol=storage.getItem("niconico_volume");
+        if(vol){ video1.volume= vol;}
+      }
+      function CheckRanges(ranges,range){
+        if(!ranges){return true;}
+        for(var key in ranges){
+          var tr=ranges[key];
+          if(tr.a<=range.b && range.a<tr.b){return false;}
+        }
+        return true;
+      }
+      function GetActualVpos(vpos,duration,cmDuration){
+        return Math.min(vpos,duration*100-cmDuration*0.5);
+      }
+      function DrawComment(){
+        if(!ShowComment){return;}
+        var canvas1=document.getElementsByTagName("canvas")[0];
+        var video1=document.getElementsByTagName("video")[0];
+        var context1=canvas1.getContext('2d');
+        context1.clearRect(0,0,canvas1.width,canvas1.height);
+//debug
+/*
+        context1.beginPath();
+*/
+
+        var height=canvas1.width/855*30;
+        var time=video1.currentTime;
+        var fontWeight=600;
+        var fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
+        context1.font=GetFontText(height,1,fontName,fontWeight);
+
+        var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
+        var rangesUe=[];
+        var rangesShita=[];
+	        
+        var cmDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
+        var occupiedPlaces=[];
+        var operatedComments=[];
+        for(var i=0;i<Comments.length;i++){
+          var comment=Comments[i];
+          var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
+          if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
+            if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
+            var occupiedPlace=function(rx,y,width,height,orgx,p){
+              this.x=rx;
+              this.y=y;
+              this.width=width;
+              this.height=height;
+              this.orgx=x;
+              this.p=p;
+            };
+
+            var heightScale=1;
+            if(comment.fontScale>0){heightScale=comment.fontScale;}
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=1.5;}
+
+            if(comment.mail!=null && ContainsCommand(comment.mail,"mincho")){
+              fontName='"ヒラギノ明朝 ProN W3", HiraMinProN-W3, "ヒラギノ明朝 ProN", HiraMinProN, "Hiragino Mincho ProN"'+','+'"游明朝体", "游明朝", "Yu Mincho", YuMincho, yumincho, YuMin-Medium'+','+"'serif'";
+              fontWeight=300;
+            }else if(comment.mail!=null && ContainsCommand(comment.mail,"gothic")){
+              fontName='"ヒラギノ角ゴシック", "Hiragino Sans", HiraginoSans'+','+'"游ゴシック体", "游ゴシック", "Yu Gothic", YuGothic, yugothic, YuGo-Medium'+','+'sans-serif';
+              fontWeight=300;
+            }
+
+            context1.font=GetFontText(height,heightScale,fontName,fontWeight);
+            r=new Coordinate(0,0);
+            var overflow=false;
+            var modnum=(canvas1.height-height+1);
+//            if(comment.width<0)
+              {comment.width=context1.measureText(comment.text).width;}
+            if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
+              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
+              if(comment.lastY>=0){
+                r.y=comment.lastY*canvas1.width;
+              }
+              var changed=false;
+              while(! CheckRanges(rangesUe,new range(r.y,height*heightScale))){
+                r.y+=height*heightScale;
+                changed=true;
+              }
+              if(changed){
+                for(var key in rangesUe){
+                  var crtr=rangesUe[key];
+                  if(crtr.b<r.y && CheckRanges(rangesUe,new range(crtr.b,height*heightScale))){
+                    r.y=crtr.b;
+                  }
+                }
+              }
+              comment.lastY=r.y/canvas1.width;
+              if(comment.width>canvas1.width){
+                heightScale*=canvas1.width/comment.width;
+                var fsize=Math.max(height*heightScale,1);
+                heightScale=fsize/height;
+                context1.font=GetFontText(fsize,1,fontName,fontWeight);
+                comment.width=context1.measureText(comment.text).width;
+                r.x=canvas1.width/2.0 - comment.width/2.0;
+              }
+              rangesUe.push(new range(r.y,height*heightScale));
+
+//              r.y+=height*(heightScale-1);
+              context1.textBaseline="top";
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
+            }
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
+              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
+              if(comment.lastY>=0){
+                r.y=comment.lastY*canvas1.width;
+              }
+              var changed=false;
+              while(! CheckRanges(rangesShita,new range(r.y,height*heightScale))){
+                r.y+=height*heightScale;
+                changed=true;
+              }
+              if(changed){
+                for(var key in rangesShita){
+                  var crtr=rangesShita[key];
+                  if(crtr.b<r.y && CheckRanges(rangesShita,new range(crtr.b,height*heightScale))){
+                    r.y=crtr.b;
+                  }
+                }
+              }
+              comment.lastY=r.y/canvas1.width;
+
+              if(comment.width>canvas1.width){
+                heightScale*=canvas1.width/comment.width;
+                context1.font=GetFontText(height,heightScale,fontName,fontWeight);
+                comment.width=context1.measureText(comment.text).width;
+                r.x=canvas1.width/2.0 - comment.width/2.0;
+              }
+/*
+context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
+context1.stroke();
+*/
+              rangesShita.push(new range(r.y,height*heightScale));
+
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
+              r.y=canvas1.height-r.y;
+
+              context1.textBaseline="bottom";
+            }else{
+              var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
+              comment.lastY=r.y/canvas1.width;
+//              r.y+=height*(heightScale-1)/2.0;
+              if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
+              r.y+=height/2.0;
+              operatedComments.push(comment);
+              context1.textBaseline="middle";
+//context1.rect(r.x,r.y,comment.width,height);
+//context1.stroke();
+            }
+            comment.fontScale=heightScale;
+
+            //r.y=(r.y%modnum+modnum)%modnum;
+            //r.y=Math.floor((r.y%canvas1.height)/height)*height;
+            // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
+            // フォント切り替えなしでは全角しかないようなのでコメントアウト中。
+            //var commenttext=comment.text.replace("\\","＼");
+            var commenttext=comment.text;
+            context1.globalAlpha=overflow?0.7:1.0;
+            var fillColor=GetColorFromMail(comment.mail);
+            context1.fillStyle=fillColor;
+            if(!overflow){
+              context1.shadowColor= fillColor=="#000000" ? "#ffffff" : "#000000";
+            }else{
+              context1.shadowColor= "transparent";
+            }
+            context1.shadowOffsetX=0;
+            context1.shadowOffsetY=0;
+            context1.shadowBlur=8;
+            context1.fillText(commenttext,r.x,r.y);
+            context1.globalAlpha=1.0;
+          }
+        }
+      }
+      function GetFontText(height,heightScale,fontName,fontWeight){
+        return fontWeight+" "+(height*heightScale)+"px "+fontName;
+      }
+      function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight,testContext){
+        var cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
+ //       if(comment.lastY>=0){return new Coordinate(GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration),comment.lastY*canvasWidth);}
+        var ry=Math.max(0,comment.lastY*canvasWidth);
+        var firstCollision=true;
+        for(var i=0;i<operatedComments.length;i++){
+          var opCom=operatedComments[i];
+          var cvpos2=GetActualVpos(opCom.vpos,videoDuration,cmDuration);
+          var a=GetCommentX(cvpos,cvpos2+cmDuration,comment.width,canvasWidth,cmDuration);
+          var b=GetCommentX(cvpos2,cvpos,opCom.width,canvasWidth,cmDuration) + opCom.width;
+          var c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
+          var d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
+          if(
+            CheckY(ry,fontHeight,opCom.lastY*canvasWidth) &&
+                (! ( ( (b<canvasWidth) && (0<a) && (cvpos2<=cvpos) ) || ( (c<canvasWidth) && (0<d) && (cvpos<cvpos2) ) ) )
+//                (! ( ( (b<canvasWidth) && (0<a) ) ) )
+            ){
+            i=-1;
+            if(firstCollision){firstCollision=false;ry=0;}
+            else{ry+=fontHeight;}
+          }
+        }
+      var rx=GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration);
+//debug
+/*
+if(!firstCollision){
+testContext.rect(rx,ry,comment.width,fontHeight);
+testContext.stroke();
+}
+*/
+        return new Coordinate(rx,ry);
+      }
+      function GetCommentX(cvpos,time,width,canvasWidth,cmDuration){
+        return (1-(time-cvpos)/cmDuration)*(canvasWidth+width)-width;
+      }
+
+      function ContainsCommand(mail,key){
+        if(mail==null || mail==""){return false;}
+        var mails=mail.split(" ");
+        for(var i=0;i<mails.length;i++){
+          if(mails[i]==key){return true;}
+        }
+        return false;
+      }
+      function GetColorFromMail(mail){
+        if(mail==null || mail==""){return "#ffffff";}
+        if(ContainsCommand(mail,"black")){return "#000000";}
+        if(ContainsCommand(mail,"red")){return "#ff0000";}
+        if(ContainsCommand(mail,"pink")){return "#FF8080";}
+        if(ContainsCommand(mail,"orange")){return "#FFC000";}
+        if(ContainsCommand(mail,"yellow")){return "#FFFF00";}
+        if(ContainsCommand(mail,"green")){return "#00FF00";}
+        if(ContainsCommand(mail,"cyan")){return "#00FFFF";}
+        if(ContainsCommand(mail,"blue")){return "#0000ff";}
+        if(ContainsCommand(mail,"purple")){return "#c000ff";}
+        if(ContainsCommand(mail,"white")){return "#ffffff";}
+
+        if(ContainsCommand(mail,"white2") || ContainsCommand(mail,"niconicowhite")){return "#cccc99";}
+        if(ContainsCommand(mail,"red2") || ContainsCommand(mail,"truered")){return "#cc0033";}
+        if(ContainsCommand(mail,"pink2")){return "#ff33cc";}
+        if(ContainsCommand(mail,"orange2") || ContainsCommand(mail,"passionorange")){return "#ff6600";}
+        if(ContainsCommand(mail,"yellow2") || ContainsCommand(mail,"madyellow")){return "#999900";}
+        if(ContainsCommand(mail,"green2") || ContainsCommand(mail,"elementalgreen")){return "#00cc66";}
+        if(ContainsCommand(mail,"cyan2")){return "#00cccc";}
+        if(ContainsCommand(mail,"blue2") || ContainsCommand(mail,"marineblue")){return "#3399ff";}
+        if(ContainsCommand(mail,"purple2") || ContainsCommand(mail,"nobleviolet")){return "#6633cc";}
+        if(ContainsCommand(mail,"black2")){return "#666666";}
+        
+        if(mail==null || mail==""){return false;}
+        var reg=new RegExp(/#[0-9A-fA-F]{6}/);
+        var mails=mail.split(" ");
+        for(var i=0;i<mails.length;i++){
+          if(reg.test(mails[i])){return mails[i];}
+        }
+
+        return "#ffffff";
+      }
+      function Coordinate(x,y){this.x=x;this.y=y;}
+      function CheckY(y1,fontHeight,y2){
+        return y1-fontHeight/2.0 < y2 && y2 < y1+fontHeight/2.0;
+      }
+      function ParseComment(xml){
+        var result=[];
+        var parser = new DOMParser();
+        var dom=parser.parseFromString(xml, 'text/xml');
+        var chats=dom.getElementsByTagName("chat");
+        for(var i=0 ; i < chats.length;i++){
+          var chat=function(text,vpos,mail,cnt){
+            this.text=text;
+            this.vpos=vpos;
+            if(mail!=null){
+              this.mail=mail.toLowerCase();
+            }else{
+              this.mail=mail;
+            }
+            this.count=cnt;
+            this.lastY=-1;
+            this.width=-1;
+            this.lastCnt=-1;
+            this.fontScale=-1;
+          }
+          var chatT=chats[i];
+          var atdeleted=chats[i].getAttribute("deleted");
+          if(atdeleted==0 || atdeleted==null){
+            result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail"),i));
+          }
+        }
+        result.sort(function(a,b){
+          if(a.vpos==b.vpos){return a.count>b.count?1:-1;}
+          return a.vpos-b.vpos;
+        });
+        return result;
+      }
+      function GetChatXML(callback){
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function() {
+          if (req.readyState == 4) {
+            if (req.status == 200) {
+              callback(req.responseText);
+              }
+            }
+          }
+        req.open('GET',CommentSource,true);
+        req.send(null);
+      }
+      Comments="";
+      GetChatXML(function(xml) {
+        Comments=ParseComment(xml);
+        CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+      }
+);
+//]]>
+    </script>
+  </body>
+</html>
+

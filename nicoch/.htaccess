@@ -1,0 +1,15 @@
+DirectoryIndex index.cgi
+Options +ExecCGI
+AddHandler cgi-script .cgi
+
+<Files "*">
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from 192.168.0.
+</Files>
+
+<Files ~ "\.pl$">
+   Deny from all
+</Files>
+
