@@ -2,7 +2,7 @@
 ニコニコチャンネルの自動キャッシュサーバー
 
 ## demo
-[デモ](https://nicocache.github.io/play.html#0)  
+[デモ](https://kuremako.github.io/play.html#0)  
 最新版とは限りません。静的サイト版。
 
 ## about
@@ -18,14 +18,14 @@
 5. cgiが実行できるようにいろんな設定をします。
 6. cpanを使って依存ライブラリをインストールします。
 7. ```nicoch.conf```を書き換えてダウンロードフォルダを設定します。フォルダはhttpの公開フォルダ外で構いません。ただしcgiが読める場所で。
-8. ```.netrc```にニコニコ動画のアカウントを登録します。パスワードを分けた別アカウントを作っておいた方が楽だと思います。
+8. ```.netrc```にニコニコ動画のアカウントを登録します。パスワードを分けた別アカウントを作っておいた方が楽だと思います。.netrcは```chmod 600 .netrc```と```chown ユーザー名 .netrc```でアクセス権を変更してください。
 ```
 machine nicovideo
 login foo@bar.com
 password your_pass
 ```
-9. ```commentproxy.cgi```にもIDとパスワードを設定します。
-10. 自動ダウンロードを設定します。```crontab -e```で```10 3 * * 1-5  perl /var/www/html/nicoch/nico-anime.pl >> ~/nicoch.log 2>> ~/nicoch.err.log```とか。エコノミーユーザーの場合は低画質の時間は避けましょう。そうでなくてもサーバー負荷を分散するようにするべきです。
+9. /var/www-data/.netrcにも同様に登録します。これは```commentproxy.pl```で使われます。なおこちらのみで、crontabをwww-dataに設定しても構いません。([参照](https://askubuntu.com/questions/189189/how-to-run-crontab-as-userwww-data))
+10. 自動ダウンロードを設定します。```crontab -e```で```10 3 * * *  perl /var/www/html/nicoch/nico-anime.pl >> ~/nicoch.log 2>> ~/nicoch.err.log```とか。エコノミーユーザーの場合は低画質の時間は避けましょう。そうでなくてもサーバー負荷を分散するようにするべきです。
 11. ブラウザでアクセスしてみて適当にチャンネルを登録します。
 
 ## play.html
@@ -39,7 +39,8 @@ password your_pass
 4. コメント表示の挙動がいくらか異なります。簡易版と考えてください。またちょっと重いです。
 
 ## ToDo
-1. ```commentproxy.cgi```を```.netrc```で対応する。調べればわかる気がする。
+1. 複数行コメントに対応。ただ本家よりこっちの表示の方が気に入っているので再現性は追及しません。基本このまま。
+2. アカウント対応。必要性は微妙。
 
 ## License
 Gistで公開されていたコードからフォークしているので厳密にはダメかもしれないですが、MITライセンスで公開しています。

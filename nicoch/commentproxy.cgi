@@ -1,17 +1,17 @@
 #!/usr/bin/perl
-#use Net::Netrc;
+use Net::Netrc;
 use LWP::UserAgent;
 use URI::Escape;
 use CGI;
 
 print <<"HEAD";
 Content-type: application/xml
+Access-Control-Allow-Origin: *
 
 HEAD
 
-#my $mach = Net::Netrc->lookup('nicovideo');
-#my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
-my ($nicologin, $nicopassword, $nicoaccount) = ("","","");
+my $mach = Net::Netrc->lookup('nicovideo');
+my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
 
 my $login_info = {
     mail_tel => $nicologin,
