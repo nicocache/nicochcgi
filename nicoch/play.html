@@ -26,6 +26,7 @@
     </div>
     <script>
 //<![CDATA[
+      var CanvasMessage="";
       var CommentTimer;
       CommentSource="";
       ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
@@ -72,25 +73,27 @@
         var target=document.body;
         video1.addEventListener('touchstart', function(event) {
           video1.pause();
-          var msgp=document.getElementById("message");
           OriginalCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
         },false);
         video1.addEventListener('touchmove', function(event) {
           event.preventDefault();
           var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
-          var msgp=document.getElementById("message");
-          msgp.innerText=GetSecond(currentCoord,OriginalCoord)+"秒移動";
+          SetMessage(GetSecond(currentCoord,OriginalCoord)+"秒移動");
         },false);
         video1.addEventListener('touchend', function(event) {
           var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
-          var msgp=document.getElementById("message");
-          msgp.innerText="";
+          SetMessage("");
           var sec=GetSecond(currentCoord,OriginalCoord);
           if(Math.abs(sec)>0){
             video1.currentTime+=sec;
           }
           video1.play();
         },false);
+      }
+      function SetMessage(message){
+          var msgp=document.getElementById("message");
+          msgp.innerText=message;
+          CanvasMessage=message;
       }
       function ResizeOnPause(){
         if(FullScreenSetting==2){SetSizeFullFixed();}
@@ -274,6 +277,25 @@
         var time=video1.currentTime;
         var fontWeight=600;
         var fontName="";
+
+        if(CanvasMessage!=""){
+          fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
+          context1.font=GetFontText(height,2,fontName,fontWeight);
+
+          var mesWidth=context1.measureText(CanvasMessage).width;
+
+          context1.textBaseline="middle";
+          context1.fillStyle="#ffffff";
+          context1.shadowColor="#000000";
+
+          context1.shadowOffsetX=0;
+          context1.shadowOffsetY=0;
+          context1.shadowBlur=8;
+          context1.fillText(CanvasMessage,canvas1.width/2.0-mesWidth/2.0,canvas1.height/2.0);
+          context1.globalAlpha=1.0;
+          fontName="";
+        }
+
         context1.font=GetFontText(height,1,fontName,fontWeight);
 
         var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
