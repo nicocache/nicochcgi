@@ -93,10 +93,12 @@
         },false);
       }
       function ResizeOnPause(){
-        if(FullScreenSetting==2){SetSizeFullControlable();}
+        if(FullScreenSetting==2){SetSizeFullFixed();}
+        if(FullScreenSetting==3){SetSizeFullControlable();}
       }
       function ResizeOnPlay(){
-        if(FullScreenSetting==2){SetSizeFull();}
+        if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
+        if(FullScreenSetting==3){SetSizeFull();}
       }
       function VolumeChange(from){
         var storage=localStorage;
@@ -143,12 +145,13 @@
         }
       }
       function ToggleFullScreen(){
-        FullScreenSetting=(FullScreenSetting+1)%3;
+        FullScreenSetting=(FullScreenSetting+1)%4;
         ApplyFullScreenSetting();
       }
       function ApplyFullScreenSetting(){
         if(FullScreenSetting==1){SetSizeFullFixed();}
-        else if(FullScreenSetting==2){SetSizeFull();}
+        else if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
+        else if(FullScreenSetting==3){SetSizeFull();}
         else{SetSizeDefault();}
       }
       function SetSizeFull(){
@@ -170,6 +173,16 @@
         var hc=document.getElementById("controler").offsetHeight;
         if(h+hc>window.innerHeight){
           h=window.innerHeight-hc;
+          w=h*(16/9);
+        }
+        SetSize(w,h);
+      }
+      function SetSizeFullFixedUncontorolable(){
+        var w=window.innerWidth;
+        var h=window.innerWidth/(16/9);
+        var hc=document.getElementById("controler").offsetHeight;
+        if(h>window.innerHeight){
+          h=window.innerHeight;
           w=h*(16/9);
         }
         SetSize(w,h);
@@ -260,7 +273,7 @@
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
         var fontWeight=600;
-        var fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
+        var fontName="";
         context1.font=GetFontText(height,1,fontName,fontWeight);
 
         var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
@@ -295,6 +308,9 @@
             }else if(comment.mail!=null && ContainsCommand(comment.mail,"gothic")){
               fontName='"ヒラギノ角ゴシック", "Hiragino Sans", HiraginoSans'+','+'"游ゴシック体", "游ゴシック", "Yu Gothic", YuGothic, yugothic, YuGo-Medium'+','+'sans-serif';
               fontWeight=300;
+            }else{
+              fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
+              fontWeight=600;
             }
 
             context1.font=GetFontText(height,heightScale,fontName,fontWeight);
