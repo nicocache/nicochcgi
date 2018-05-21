@@ -3,7 +3,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width" />
     <title>ニコニコ動画プレイヤー</title>
     <style type="text/css">
       a.button{display: inline-block;padding: 0.3em 0.5em;text-decoration: none;background: #888;color: #FFF;border-radius: 3px;}
@@ -27,6 +27,7 @@
     <script>
 //<![CDATA[
       var CanvasMessage="";
+      var CanvasMessageDeadline=0;
       var CommentTimer;
       CommentSource="";
       ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
@@ -35,7 +36,7 @@
       SetFromLocationHash();
       Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
       ApplyBackgroundSetting();
-      FullScreenSetting=1;
+      FullScreenSetting=2;
       ApplyFullScreenSetting();
       window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
       var OriginalCoord;
@@ -93,7 +94,15 @@
       function SetMessage(message){
           var msgp=document.getElementById("message");
           msgp.innerText=message;
+          SetMessageCanvas(message,0);
+      }
+      function SetMessageCanvas(message,timespan){
           CanvasMessage=message;
+          if(timespan!=0){
+            CanvasMessageDeadline=(new Date()).getTime()+timespan;
+          }else{
+            CanvasMessageDeadline=0;
+          }
       }
       function ResizeOnPause(){
         if(FullScreenSetting==2){SetSizeFullFixed();}
@@ -149,6 +158,12 @@
       }
       function ToggleFullScreen(){
         FullScreenSetting=(FullScreenSetting+1)%4;
+
+        if(FullScreenSetting==0){SetMessageCanvas("標準サイズ",3000);}
+        else if(FullScreenSetting==1){SetMessageCanvas("最適(コントローラー常時表示)",3000);}
+        else if(FullScreenSetting==2){SetMessageCanvas("最適(コントローラー停止時のみ)",3000);}
+        else if(FullScreenSetting==3){SetMessageCanvas("全体表示",3000);}
+
         ApplyFullScreenSetting();
       }
       function ApplyFullScreenSetting(){
@@ -226,12 +241,12 @@
         ShowComment=!ShowComment;
         if(!ShowComment){
         var storage=localStorage;
-          document.getElementById("toggle_comment").innerText="コメント非表示";
+          document.getElementById("toggle_comment").innerText="コメントオフ";
           var canvas1=document.getElementsByTagName("canvas")[0];
           var context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
         }
-        else{document.getElementById("toggle_comment").innerText="コメント表示";}
+        else{document.getElementById("toggle_comment").innerText="コメントオン";}
 
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
@@ -278,7 +293,7 @@
         var fontWeight=600;
         var fontName="";
 
-        if(CanvasMessage!=""){
+        if(CanvasMessage!="" && (CanvasMessageDeadline==0 || CanvasMessageDeadline>=(new Date()).getTime())){
           fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
           context1.font=GetFontText(height,2,fontName,fontWeight);
 
