@@ -293,6 +293,8 @@
         var fontWeight=600;
         var fontName="";
 
+        var blurScale=0.3;
+
         if(CanvasMessage!="" && (CanvasMessageDeadline==0 || CanvasMessageDeadline>=(new Date()).getTime())){
           fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
           context1.font=GetFontText(height,2,fontName,fontWeight);
@@ -305,7 +307,7 @@
 
           context1.shadowOffsetX=0;
           context1.shadowOffsetY=0;
-          context1.shadowBlur=8;
+          context1.shadowBlur=height*blurScale;
           context1.fillText(CanvasMessage,canvas1.width/2.0-mesWidth/2.0,canvas1.height/2.0);
           context1.globalAlpha=1.0;
           fontName="";
@@ -454,7 +456,7 @@ context1.stroke();
             }
             context1.shadowOffsetX=0;
             context1.shadowOffsetY=0;
-            context1.shadowBlur=8;
+            context1.shadowBlur=height*blurScale;
             context1.fillText(commenttext,r.x,r.y);
             context1.globalAlpha=1.0;
           }
