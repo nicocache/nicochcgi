@@ -126,7 +126,7 @@
       }
       function SetFullScreen(){
         requestFullscreen();
-        FullScreenSetting=2;
+        /*FullScreenSetting=2;*/
         ApplyFullScreenSetting();
         var btn=document.getElementById("toggle_fullscreen");
         btn.onclick=SetFullScreenCancel;
@@ -443,9 +443,9 @@ context1.stroke();
             //r.y=(r.y%modnum+modnum)%modnum;
             //r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
-            // フォント切り替えなしでは全角しかないようなのでコメントアウト中。
-            //var commenttext=comment.text.replace("\\","＼");
-            var commenttext=comment.text;
+            // フォント切り替えなしでは全角しかないようなので\u29F5(REVERSE SOLIDUS OPERATOR)で代替
+            var commenttext=comment.text.replace("\\","\u29F5");
+            //var commenttext=comment.text;
             context1.globalAlpha=overflow?0.7:1.0;
             var fillColor=GetColorFromMail(comment.mail);
             context1.fillStyle=fillColor;
