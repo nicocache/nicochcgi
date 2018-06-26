@@ -46,7 +46,7 @@
       SetTouchEvent();
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       SetFpsDisplay();
-      /*setTimeout(function(){document.getElementById("toggle_fullscreen_center").style.display="none";},3000);*/
+      setTimeout(function(){document.getElementById("toggle_fullscreen_center").style.display="none";},1000);
 
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
