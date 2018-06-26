@@ -15,6 +15,9 @@
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
+      <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
+        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="document.getElementById('toggle_fullscreen_center').style.display='none';SetFullScreen();" style="background:rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
+      </div>
     </div><!--
 　　--><div id="controler">
       <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
@@ -43,6 +46,7 @@
       SetTouchEvent();
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       SetFpsDisplay();
+      /*setTimeout(function(){document.getElementById("toggle_fullscreen_center").style.display="none";},3000);*/
 
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
@@ -69,15 +73,18 @@
         var abutton=document.getElementById("toggle_fps");
         abutton.innerText=Fps+"Fps";
       }
+      var MoveBaseTime=-1;
       function SetTouchEvent(){
         var video1=document.getElementsByTagName("video")[0];
         var target=document.body;
         video1.addEventListener('touchstart', function(event) {
-          video1.pause();
+          /*video1.pause();*/
+          if(MoveBaseTime==-1) {MoveBaseTime=video1.currentTime;}
           OriginalCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
         },false);
         video1.addEventListener('touchmove', function(event) {
           event.preventDefault();
+          if(MoveBaseTime==-1) {MoveBaseTime=video1.currentTime;}
           var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
           SetMessage(GetSecond(currentCoord,OriginalCoord)+"秒移動");
         },false);
@@ -86,9 +93,10 @@
           SetMessage("");
           var sec=GetSecond(currentCoord,OriginalCoord);
           if(Math.abs(sec)>0){
-            video1.currentTime+=sec;
+            video1.currentTime=MoveBaseTime+sec;
           }
-          video1.play();
+          MoveBaseTime=-1;
+          /*video1.play();*/
         },false);
       }
       function SetMessage(message){
