@@ -38,6 +38,7 @@ foreach my $dir (@dirs){
       print "          \"title\":\"".EscapeJson($title)."\",\n";
       print "          \"movie_url\":\"movie.cgi?c=$chid&v=$watchid\",\n";
       print "          \"thumbnail_url\":\"thumb.cgi?c=$chid&v=$watchid\",\n";
+      print "          \"player_url\":\"play.html\#$watchid:$chid\",\n";
       print "          \"comment_url\":\"commentproxy.cgi?id=$watchid\"\n";
       print "        }";
     }
