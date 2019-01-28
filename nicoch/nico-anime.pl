@@ -11,6 +11,9 @@ use Net::Netrc;
 
 require File::Spec->catfile(dirname(__FILE__),"common.pl");
 
+binmode(STDOUT, ":utf8");
+
+print "Log\nTime: ".time."\n";
 my $mach = Net::Netrc->lookup('nicovideo');
 my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
 
@@ -27,19 +30,28 @@ my $animedir=$conf{"dlhome"};
 
 my $ua = LWP::UserAgent->new();
 foreach my $url (@url) {
-    my $video = scraper {
+    my $video;
+    my $video2;
+    eval{
+    $video = scraper {
         process '.g-video-title .g-video-link', 'title' => 'TEXT', 'url[]' => '@href';
     }->scrape(URI->new($url));
-    my $video2 = scraper {
+    $video2 = scraper {
         process '.thumb_video', 'title' => 'TEXT', 'url[]' => '@href';
     }->scrape(URI->new($url."/video"));
+    };
+    sleep(1);
+    if($@){
+      warn "ERROR: $@\n";
+      next;
+    }
 
     foreach my $surl (@{$video->{url}},@{$video2->{url}}){
         my ($video_id) = $surl =~ m!/watch/(\w+)!;
         my $res = $ua->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
         my $ext = XMLin($res->content)->{thumb}{movie_type};
         my $title = XMLin($res->content)->{thumb}{title};
-        my ($chid) = $url =~ m!/([^/]+?)$!;
+        my ($chid) = $url =~ m!/([^/]+?)/?$!;
         my $chdir=File::Spec->catfile($animedir , $chid );
         if(! -d $chdir){mkdir $chdir;}
 
@@ -61,13 +73,39 @@ foreach my $url (@url) {
         warn "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
-            my $vurl= $client->prepare_download($video_id);
-            if ($vurl=~ /low$/){die "low quality";}
-            $client->download($video_id, sub {
-                my ($data, $res, $proto) = @_;
-                print {$fh} $data;
-	        });
-          rename $filetmp,$file;
+          my $vurl= $client->prepare_download($video_id);
+          my $dl_error="";
+          my $dl_size=-1;
+          my $dl_downloaded=0;
+          if ($vurl=~ /low$/){die "low quality";}
+
+          my $downloder = sub {
+              my ($data, $res, $proto) = @_;
+              $dl_size=0+$res->headers->header('Content-Length') if defined $res->headers->header('Content-Length');
+              die $dl_error="failed" if !$res->is_success;
+              die $dl_error="aborted" if defined $res->headers->header('Client-Aborted');
+              die $dl_error="died: ".$res->headers->header("X-Died") if defined $res->header("X-Died");
+              $dl_downloaded+=length $data;
+              print {$fh} $data;
+              };
+
+          $client->download($video_id, $downloder);
+          if($dl_error ne ""){unlink $filetmp; die $dl_error;}
+          if($dl_downloaded!=$dl_size && $dl_size != -1){
+#            warn $dl_downloaded."B / ".$dl_size."B downloaded. Continue.";
+#            my $request=HTTP::Request->new( GET => $url );
+#            $request->header(Range=>"bytes=".($dl_downloaded+1)."-".$dl_size );
+#            sleep 5;
+#            $client->user_agent->request( $request, $downloder);
+#            if($dl_error ne ""){unlink $filetmp; die $dl_error;}
+          
+            if($dl_downloaded!=$dl_size){
+              unlink $filetmp;
+              die "Only ".$dl_downloaded."B / ".$dl_size."B downloaded.";
+            }
+          }
+          if(-s $filetmp == 0){unlink $filetmp;}
+          else{rename $filetmp,$file;}
         };
         sleep 10;
         if ($@) {
