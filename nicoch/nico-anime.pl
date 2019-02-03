@@ -92,16 +92,22 @@ foreach my $url (@url) {
           $client->download($video_id, $downloder);
           if($dl_error ne ""){unlink $filetmp; die $dl_error;}
           if($dl_downloaded!=$dl_size && $dl_size != -1){
-#            warn $dl_downloaded."B / ".$dl_size."B downloaded. Continue.";
-#            my $request=HTTP::Request->new( GET => $url );
-#            $request->header(Range=>"bytes=".($dl_downloaded+1)."-".$dl_size );
-#            sleep 5;
-#            $client->user_agent->request( $request, $downloder);
-#            if($dl_error ne ""){unlink $filetmp; die $dl_error;}
+            my $dl_size_org=$dl_size;
+            if(1){
+              warn $dl_downloaded."B / ".$dl_size."B downloaded. Continue.";
+              sleep 30;
+              my $vurl2= $client->prepare_download($video_id);
+              if ($vurl2=~ /low$/){die "low quality";}
+              my $request=HTTP::Request->new( GET => $vurl2 );
+              $request->header(Range=>"bytes=".($dl_downloaded)."-");
+              my $res2=$client->user_agent->request( $request, $downloder);
+              die "Failed: ".$res2->status_line if $res2->is_error;
+              if($dl_error ne ""){unlink $filetmp; die $dl_error;}
+            }
           
-            if($dl_downloaded!=$dl_size){
+            if($dl_downloaded!=$dl_size_org){
               unlink $filetmp;
-              die "Only ".$dl_downloaded."B / ".$dl_size."B downloaded.";
+              die "Only ".$dl_downloaded."B / ".$dl_size_org."B downloaded.";
             }
           }
           if(-s $filetmp == 0){unlink $filetmp;}
