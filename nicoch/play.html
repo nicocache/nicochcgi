@@ -18,14 +18,14 @@
       <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
         <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="document.getElementById('toggle_fullscreen_center').style.display='none';SetFullScreen();" style="background:rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
       </div>
-    </div><!--
-　　--><div id="controler">
-      <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
-      <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
-      <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
-      <a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>
-      <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
-      <span id="message" style="color:#888;"></span>
+      <div id="controller" style="position:absolute;z-index:4;top:0px;">
+        <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
+        <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
+        <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
+        <!--<a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>-->
+        <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
+        <span id="message" style="color:#888;"></span>
+      </div>
     </div>
     <script>
 //<![CDATA[
@@ -47,6 +47,7 @@
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       SetFpsDisplay();
       setTimeout(function(){document.getElementById("toggle_fullscreen_center").style.display="none";},1000);
+      SetControllerVisibility(false);
 
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
@@ -113,12 +114,14 @@
           }
       }
       function ResizeOnPause(){
-        if(FullScreenSetting==2){SetSizeFullFixed();}
-        if(FullScreenSetting==3){SetSizeFullControlable();}
+        SetControllerVisibility(true);
+        //if(FullScreenSetting==2){SetSizeFullFixed();}
+        //if(FullScreenSetting==3){SetSizeFullControlable();}
       }
       function ResizeOnPlay(){
-        if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
-        if(FullScreenSetting==3){SetSizeFull();}
+        SetControllerVisibility(false);
+        //if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
+        //if(FullScreenSetting==3){SetSizeFull();}
       }
       function VolumeChange(from){
         var storage=localStorage;
@@ -126,6 +129,14 @@
       }
       function GetSecond(orgcoord,crtcoord){
         return Math.floor(-(crtcoord.x-orgcoord.x)*0.1);
+      }
+      function SetControllerVisibility(visible){
+        if(visible){
+          document.getElementById("controller").style.display="inline";
+        }else{
+          document.getElementById("controller").style.display="none";
+          //setTimeout(function(){document.getElementById("controller").style.display="none";},5000);
+        }
       }
       function SetFullScreenCancel(){
         exitFullscreen();
@@ -166,10 +177,11 @@
       }
       function ToggleFullScreen(){
         FullScreenSetting=(FullScreenSetting+1)%4;
+        if(FullScreenSetting==1){FullScreenSetting++;}
 
         if(FullScreenSetting==0){SetMessageCanvas("標準サイズ",3000);}
         else if(FullScreenSetting==1){SetMessageCanvas("最適(コントローラー常時表示)",3000);}
-        else if(FullScreenSetting==2){SetMessageCanvas("最適(コントローラー停止時のみ)",3000);}
+        else if(FullScreenSetting==2){SetMessageCanvas("最適",3000);}
         else if(FullScreenSetting==3){SetMessageCanvas("全体表示",3000);}
 
         ApplyFullScreenSetting();
@@ -183,20 +195,20 @@
       function SetSizeFull(){
         var w=window.innerWidth;
         var h=window.innerHeight;
-        var hc=document.getElementById("controler").offsetHeight;
+        var hc=document.getElementById("controller").offsetHeight;
         //SetSize(w,h-hc);
         if(w/(16/9)+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
       }
       function SetSizeFullControlable(){
         var w=window.innerWidth;
         var h=window.innerHeight;
-        var hc=document.getElementById("controler").offsetHeight;
+        var hc=document.getElementById("controller").offsetHeight;
         SetSize(w,h-hc);
       }
       function SetSizeFullFixed(){
         var w=window.innerWidth;
         var h=window.innerWidth/(16/9);
-        var hc=document.getElementById("controler").offsetHeight;
+        var hc=document.getElementById("controller").offsetHeight;
         if(h+hc>window.innerHeight){
           h=window.innerHeight-hc;
           w=h*(16/9);
@@ -206,7 +218,7 @@
       function SetSizeFullFixedUncontorolable(){
         var w=window.innerWidth;
         var h=window.innerWidth/(16/9);
-        var hc=document.getElementById("controler").offsetHeight;
+        var hc=document.getElementById("controller").offsetHeight;
         if(h>window.innerHeight){
           h=window.innerHeight;
           w=h*(16/9);
@@ -219,7 +231,7 @@
       }
       function SetSize(width,height){
         var videoDiv1= document.getElementById("VideoPlayer");
-        var controler1= document.getElementById("controler");
+        var controler1= document.getElementById("controller");
         var canvas1=document.getElementsByTagName("canvas")[0];
         var video1=document.getElementsByTagName("video")[0];
 
