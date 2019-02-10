@@ -16,14 +16,15 @@
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
       <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
-        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="document.getElementById('toggle_fullscreen_center').style.display='none';SetFullScreen();" style="background:rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
+        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="document.getElementById('toggle_fullscreen_center').style.display='none';ToggleFullScreenStatus()" style="background:rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
       </div>
       <div id="controller" style="position:absolute;z-index:4;top:0px;">
-        <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ切り替え</a>
-        <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="SetFullScreen()">全画面</a>
+        <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ</a>
+        <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="ToggleFullScreenStatus()">全画面</a>
         <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
-        <!--<a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景切替</a>-->
+        <!--<a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景</a>-->
         <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
+        <a class="button" id="nicovideo_link" style="display:none;" href="https://www.nicovideo.jp/watch/">公式へ</a>
         <span id="message" style="color:#888;"></span>
       </div>
     </div>
@@ -58,6 +59,9 @@
         else if(e.keyCode==40){video1.volume=Math.max(video1.volume-0.1,0.0);}
         else if(e.keyCode==32 && video1.paused){video1.play();}
         else if(e.keyCode==32){video1.pause();}
+        else if(e.keyCode==67){ToggleComment();}
+        else if(e.keyCode==77){video1.muted=!video1.muted;}
+        else if(e.keyCode==70){ToggleFullScreenStatus();}
       }
       function ToggleFps(){
         if(Fps==60){Fps=15;}
@@ -138,17 +142,12 @@
           //setTimeout(function(){document.getElementById("controller").style.display="none";},5000);
         }
       }
-      function SetFullScreenCancel(){
-        exitFullscreen();
-        var btn=document.getElementById("toggle_fullscreen");
-        btn.onclick=SetFullScreen;
-      }
-      function SetFullScreen(){
-        requestFullscreen();
-        /*FullScreenSetting=2;*/
-        ApplyFullScreenSetting();
-        var btn=document.getElementById("toggle_fullscreen");
-        btn.onclick=SetFullScreenCancel;
+      function ToggleFullScreenStatus(){
+        if(document.fullscreenElement == null){
+          requestFullscreen();
+        }else{
+          exitFullscreen();
+        }
       }
       function requestFullscreen() {
         var target=document.body;
@@ -271,6 +270,7 @@
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
       function SetFromLocationHash(){
+        //IMPORTANT:
         //動画・コメントプロキシの設定はここを変更してください。
         var hash=window.location.hash.split(":");
         var id=hash[0].slice(1);
@@ -282,9 +282,16 @@
           video1.src="movie.cgi?v="+id;
         }
 
+        UpdateLinkId(id);
+
         var storage=localStorage;
         var vol=storage.getItem("niconico_volume");
         if(vol){ video1.volume= vol;}
+      }
+      function UpdateLinkId(id){
+        var link=document.getElementById("nicovideo_link");
+        link.setAttribute("href", "https://www.nicovideo.jp/watch/"+id);
+        link.style.display="inline";
       }
       function CheckRanges(ranges,range){
         if(!ranges){return true;}

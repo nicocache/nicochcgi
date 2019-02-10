@@ -10,7 +10,7 @@
 ダウンロードスクリプトに管理用のcgi。
 
 ## Hot to use
-1. このフォルダ全体をApacheの公開フォルダ(/var/www/html/nicoch/とか)にコピーします。  
+1. nicochフォルダをApacheの公開フォルダ(/var/www/html/nicoch/とか)にコピーします。  
 ```git clone https://github.com/kuremako/nicochcgi.git```とか。
 2. ユーザーを書き換えます。```sudo chown www-data:www-data *```とか。```chlist.*```の3ファイルはcgiが書き換えるので必須です。
 3. ```.htaccess```を書き換えます。間違えて外部からアクセスされると犯罪になりかねません。```.htaccess```が有効になるように設定するのも忘れないでください。
