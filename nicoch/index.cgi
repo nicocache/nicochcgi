@@ -78,6 +78,7 @@ print <<"FORM";
 <input type="submit" value="追加" />
 </form>
 <a href="http://ch.nicovideo.jp">ニコニコチャンネル</a>
+<a href="editor.cgi">一括編集</a>
 </div>
 FORM
 

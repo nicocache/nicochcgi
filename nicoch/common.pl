@@ -8,11 +8,13 @@ sub GetChannels{
   my @result;
   my $chlist=File::Spec->catfile(dirname(__FILE__),"chlist.txt");
   open(FILE,"<",$chlist);
+  flock(FILE, 1);
   while(my $urlch =<FILE>){
     if($urlch=~ m!^(https?://ch.nicovideo.jp/.+)!){
       push @result,$1;
     }
   }
+  close(FILE);
   return @result;
 }
 

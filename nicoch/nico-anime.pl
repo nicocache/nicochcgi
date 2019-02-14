@@ -13,6 +13,9 @@ require File::Spec->catfile(dirname(__FILE__),"common.pl");
 
 binmode(STDOUT, ":utf8");
 
+open(LOCK, File::Spec->catfile(dirname(__FILE__),"lock"));
+flock(LOCK, 2);
+
 print "Log\nTime: ".time."\n";
 my $mach = Net::Netrc->lookup('nicovideo');
 my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
@@ -93,7 +96,10 @@ foreach my $url (@url) {
           if($dl_error ne ""){unlink $filetmp; die $dl_error;}
           if($dl_downloaded!=$dl_size && $dl_size != -1){
             my $dl_size_org=$dl_size;
-            if(1){
+            my $i=0;
+            my $max_retry_count=3;
+            while($i<$max_retry_count && $dl_downloaded!=$dl_size_org){
+              $i++;
               warn $dl_downloaded."B / ".$dl_size."B downloaded. Continue.";
               sleep 30;
               my $vurl2= $client->prepare_download($video_id);
