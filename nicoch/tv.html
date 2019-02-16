@@ -34,7 +34,8 @@
     <script type="text/javascript"> 
 //<[CDATA[
 var Channels;
-GetData(function(){ShowChannels()});
+var LastChannel=localStorage.getItem("niconico_last_played_channel")?localStorage.getItem("niconico_last_played_channel"):null;
+GetData(function(){ShowChannels(LastChannel)});
 
 //var SelectedCount=0;
 var SelectedItem;
@@ -194,9 +195,9 @@ function SelectionClear(){
   }
 }
 
-function ShowChannels(){
+function ShowChannels(lastChannel){
 //  SelectionClear();
-  ShowChannelsRecorded();
+  ShowChannelsRecorded(lastChannel);
 }
 
 function GetSelectedContainer(){
@@ -204,6 +205,8 @@ function GetSelectedContainer(){
 }
 
 function ShowVideosRecorded(channel_div,targetCount){
+  localStorage.setItem("niconico_last_played_channel",channel_div.getAttribute("channel_id"));
+
   var container=document.createElement("div");
   container.setAttribute("class","video_group container");  
   container.setAttribute("id","container_videos");  
@@ -269,9 +272,11 @@ function AppendVideoBoxRecorded(container,item,row_count,column_count,item_count
   return div;
 }
 
-function ShowChannelsRecorded(){
+function ShowChannelsRecorded(lastChannel){
   var container_ch = document.getElementById("container_channel_recorded");
   ClearChild(container_ch);
+
+  lastChannel=lastChannel==null||lastChannel==""?null:lastChannel;
 
   var row_count=0;
   var recorded=Channels["recorded_channels"];
@@ -287,6 +292,7 @@ function ShowChannelsRecorded(){
 
   var showVideoTarget=null;
  
+console.log(lastChannel);
   for(var item in recorded){
     if(recorded[item].videos.length==0){
       //item_count++;
@@ -294,7 +300,7 @@ function ShowChannelsRecorded(){
     }
     var item_count=parseInt(item);
     var div=AppendChannelBoxRecorded(current_row,recorded[item],row_count,column_count,item_count);
-    if((item_count==SelectedCount && SelectedParent==null)||parentCount==item_count){
+    if((item_count==SelectedCount && SelectedParent==null && lastChannel==null) || parentCount==item_count || (SelectedParent==null && lastChannel==recorded[item].channel_id)){
       div.classList.add("selected");
       ScrollInto(div);
       SelectedItem=div;
@@ -342,6 +348,7 @@ function AppendChannelBoxRecorded(container,item,row_count,column_count,item_cou
   div.setAttribute("row",row_count);
   div.setAttribute("column",column_count);
   div.setAttribute("item_count",item_count);
+  div.setAttribute("channel_id",item.channel_id);
   var videof=item.videos[0];
   div.innerHTML="<img src='"+videof.thumbnail_url+"' /><div class='box_info'><p class='title'>"+videof.title+"...</p><p class='detail'><a href='http://ch.nicovideo.jp/"+item.channel_id+"'>"+item.channel_id+"</a></p></div>";
   //div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";

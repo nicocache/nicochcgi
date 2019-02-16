@@ -48,6 +48,7 @@
     <script type="text/javascript"> 
 //<[CDATA[
 var Channels;
+var LastChannel=localStorage.getItem("niconico_last_played_channel")?localStorage.getItem("niconico_last_played_channel"):null;
 GetData(function(){ShowChannels()});
 
 function ShowChannels(){
@@ -61,8 +62,16 @@ function ShowChannelsRecorded(){
  
   var recorded=Channels["recorded_channels"];
  
+  var scrollTarget=null;
   for(var item in recorded){
-    AppendChannelBoxRecorded(container_ch,recorded[item]);
+    var div=AppendChannelBoxRecorded(container_ch,recorded[item]);
+    if(LastChannel!=null && recorded[item].channel_id == LastChannel){
+      scrollTarget=div;
+    }
+  }
+
+  if(scrollTarget!=null){
+    ScrollInto(scrollTarget);
   }
 }
 
@@ -72,6 +81,20 @@ function AppendChannelBoxRecorded(container,item){
   div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
   AppendVideoGroup(div,item);
   container.appendChild(div);
+  return div;
+}
+
+function ScrollInto(item){
+  item.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+    inline: 'nearest',});
+}
+
+function OpenVideo(movie_id,channel_id){
+  localStorage.setItem("niconico_last_played_channel",channel_id);
+  window.location.href = "http://www.nicovideo.jp/watch/"+video_id;
+  return false;
 }
 
 function ShowChannelsRecording(){
@@ -100,7 +123,7 @@ function AppendVideoGroup(container,item){
   var videos=item.videos;
   for(var key in videos){
     var video=videos[key];
-    html+="<a href='"+video.player_url+"'>"+video.title+"</a>(<a href='http://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
+    html+="<a href='"+video.player_url+"' onclick='OpenVideo(\""+video.id+"\",\""+item.channel_id+"\")'>"+video.title+"</a>(<a href='http://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
   }
   div.innerHTML=html;
   container.appendChild(div);
