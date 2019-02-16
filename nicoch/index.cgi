@@ -79,6 +79,7 @@ print <<"FORM";
 </form>
 <a href="http://ch.nicovideo.jp">ニコニコチャンネル</a>
 <a href="editor.cgi">一括編集</a>
+<a href="tv.html">テレビ向けUI</a>
 </div>
 FORM
 

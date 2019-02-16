@@ -1,0 +1,397 @@
+<html>
+  <head>
+    <title>ニコニコチャンネルレコーダー</title>
+    <link rel="stylesheet" type="text/css" href="tv.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=yes,initial-scale=1.0" />
+    <!-- icon info -->
+    <link rel="shortcut icon" type="image/vnd.microsoft.icon" href="favicons/favicon.ico" />
+    <link rel="icon" type="image/vnd.microsoft.icon" href="favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="57x57" href="favicons/apple-touch-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="favicons/apple-touch-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="favicons/apple-touch-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="favicons/apple-touch-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="favicons/apple-touch-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="favicons/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="favicons/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="favicons/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicons/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicons/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicons/favicon-160x160.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicons/favicon-196x196.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png" />
+    <link rel="manifest" href="favicons/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="favicons/mstile-144x144.png" />
+    <!-- end of icon info -->
+  </head>
+  <body>
+    <h1>チャンネル一覧</h1>
+    <div class='channel_group container' id="container_channel_recorded"></div>
+    <script type="text/javascript"> 
+//<[CDATA[
+var Channels;
+GetData(function(){ShowChannels()});
+
+//var SelectedCount=0;
+var SelectedItem;
+var SelectedParent;
+
+//http://analogic.jp/window-resize-complete/
+var timerResize = 0;
+
+window.addEventListener("keydown", function (e){
+  var video1=document.getElementsByTagName("video")[0];
+  if(e.keyCode==37 || e.key=="ArrowLeft" || e.key=="Left"){
+    SelectionMove(1);
+    e.preventDefault();
+  }
+  else if(e.keyCode==39 || e.key=="ArrowRight" || e.key=="Right"){
+    SelectionMove(2);
+    e.preventDefault();
+  }
+  else if(e.keyCode==38 || e.key=="ArrowUp" || e.key=="Up"){
+    SelectionMove(3);
+    e.preventDefault();
+  }
+  else if(e.keyCode==40 || e.key=="ArrowDown" || e.key=="Down"){
+    SelectionMove(4);
+    e.preventDefault();
+  }
+  else if(e.keyCode==13 || e.key=="Enter"){
+    if(SelectedParent==null){
+      ShowVideosRecorded(SelectedItem,0);
+    }else{
+      OpenVideo(SelectedItem);
+    }
+    e.preventDefault();
+  }
+},false);
+
+window.onresize = function () {
+  if (timerResize > 0) {
+    clearTimeout(timerResize);
+  }
+ 
+  timerResize = setTimeout(function () {
+    ShowChannels();
+  }, 200);
+};
+
+function OpenVideo(item){
+  window.location.href = item.getAttribute("player_url");
+}
+
+function SelectItem(row,column){
+  SelectionClear();
+  /*SelectedRow=row;
+  SelectedColumn=column;*/
+
+  var container_ch = GetSelectedContainer();
+
+  for(var item_row_key in container_ch.children){
+    var item_row=container_ch.children[item_row_key];
+    if(parseInt(item_row.getAttribute("row"))==row){
+      for(var item_key in item_row.children){
+        var item=item_row.children[item_key];
+        if(parseInt(item.getAttribute("column"))==column){
+          SelectItemDiv(item);
+          return;
+        }
+      }
+      break;
+    }
+  }
+  console.log("invalid selection: "+row+","+column);
+}
+
+function SelectItemDiv(item){
+  item.classList.add("selected");
+  SelectedItem=item;
+  ScrollInto(item);
+}
+
+function ScrollInto(item){
+  item.scrollIntoView({
+    behavior: 'smooth',
+    block: 'nearest',
+    inline: 'nearest',});
+}
+
+function CloseVideos(){
+  var child = document.getElementById("container_videos");
+  if(child==null)return;
+  child.parentNode.removeChild(child);
+
+  if(SelectedParent!=null){
+    if(SelectedParent.classList.contains("selected")){
+      SelectedParent.classList.remove("selected");
+    }
+  }
+  
+  SelectItemDiv(SelectedParent);
+  SelectedParent=null;
+}
+
+function SelectionMove(direction){
+  //0:Stay,1:Left,2:Right,3:Up,4:Down
+  var SelectedRow=parseInt(SelectedItem.getAttribute("row"));
+  var SelectedColumn=parseInt(SelectedItem.getAttribute("column"));
+
+  if(direction == 1){
+    if(SelectedColumn>=1){
+      SelectItem(SelectedRow,SelectedColumn-1);
+      //SelectedCount--;
+    }
+    else if(SelectedRow>=1){
+      var prev=SelectedItem.parentNode.previousElementSibling;
+      var cmax=parseInt(prev.getAttribute("column_max"));
+      SelectItem(SelectedRow-1,cmax-1);
+      //SelectedCount--;
+    }
+  }else if(direction == 2){
+    var cmax=parseInt(SelectedItem.parentNode.getAttribute("column_max"));
+    var last=SelectedItem.parentNode.getAttribute("last_row");
+    if(SelectedColumn+1<cmax){
+      SelectItem(SelectedRow,SelectedColumn+1);
+      //SelectedCount++;
+    }
+    else if(last!="true"){
+      SelectItem(SelectedRow+1,0);
+      //SelectedCount++;
+    }
+  }else if(direction == 3){
+    if(SelectedRow>0){
+      var prev=SelectedItem.parentNode.previousElementSibling;
+      var cmax=parseInt(prev.getAttribute("column_max"));
+      var cnew=Math.min(SelectedColumn,cmax-1);
+      //SelectedCount-=SelectedColumn+cmax-cnew;
+      SelectItem(SelectedRow-1,cnew);
+    }else if(SelectedParent!=null){
+      CloseVideos();
+    }
+  }else if(direction == 4){
+    var cmax=parseInt(SelectedItem.parentNode.getAttribute("column_max"));
+    var last=SelectedItem.parentNode.getAttribute("last_row");
+    if(last!="true"){
+      var next=SelectedItem.parentNode.nextElementSibling;
+      var cmaxn=parseInt(next.getAttribute("column_max"));
+      var cnew=Math.min(SelectedColumn,cmaxn-1);
+      //SelectedCount+=cmax-SelectedColumn+cnew;
+      SelectItem(SelectedRow+1,cnew);
+    }else if(SelectedParent!=null){
+      CloseVideos();
+    }
+  }
+}
+
+function SelectionClear(){
+  if(SelectedItem.classList.contains("selected")){
+    SelectedItem.classList.remove("selected");
+  }
+}
+
+function ShowChannels(){
+//  SelectionClear();
+  ShowChannelsRecorded();
+}
+
+function GetSelectedContainer(){
+  return SelectedParent==null? document.getElementById("container_channel_recorded"):document.getElementById("container_videos");
+}
+
+function ShowVideosRecorded(channel_div,targetCount){
+  var container=document.createElement("div");
+  container.setAttribute("class","video_group container");  
+  container.setAttribute("id","container_videos");  
+  channel_div.parentNode.parentNode.insertBefore(container,channel_div.parentNode.nextSibling);
+
+  var row_count=0;
+//ToDo: fix;
+  var channel = Channels["recorded_channels"][parseInt(channel_div.getAttribute("item_count"))];
+  var current_row=AppendChannelBoxRowContainer(container,row_count);
+  var wr=current_row.clientWidth;
+  var wl=wr;
+  var w=-1;
+  var column_count=0;
+  var item_count=0;
+  var SelectedCount=targetCount==null?0:targetCount;
+  SelectedParent=channel_div;
+  
+  for(var item_key in channel.videos){
+    var video=channel.videos[item_key];
+    var div=AppendVideoBoxRecorded(current_row,video,row_count,column_count,item_count);
+    if(item_count==SelectedCount){
+      div.classList.add("selected");
+      ScrollInto(div);
+      SelectedItem=div;
+    }
+    var style=window.getComputedStyle(div);
+    w=div.offsetWidth+parseInt(style.getPropertyValue('margin-left'));
+    wl-=w;
+    column_count++;
+    item_count++;
+    if(wl<w && parseInt(item_key)+1<channel.videos.length){
+      current_row.setAttribute("column_max",column_count);
+      row_count++;
+      column_count=0;
+      current_row=AppendChannelBoxRowContainer(container,row_count);
+      wl=wr;
+    }
+  }
+  current_row.setAttribute("column_max",column_count);
+  current_row.setAttribute("last_row","true");
+
+  container.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+    inline: 'nearest',});
+
+}
+
+function AppendVideoBoxRecorded(container,item,row_count,column_count,item_count){
+  var div=document.createElement("div");
+  div.setAttribute("class","video_box");
+  div.setAttribute("row",row_count);
+  div.setAttribute("column",column_count);
+  div.setAttribute("item_count",item_count);
+  div.setAttribute("player_url",item.player_url);
+  div.innerHTML="<img src='"+item.thumbnail_url+"' /><div class='box_info'><p class='title'>"+item.title+"</p><p class='detail'><a href='http://www.nicovideo.jp/watch/"+item.id+"'>"+item.id+"</a></p></div>";
+
+  div.addEventListener("click",function() {
+    OpenVideo(div);
+  },false);
+
+  container.appendChild(div);
+  return div;
+}
+
+function ShowChannelsRecorded(){
+  var container_ch = document.getElementById("container_channel_recorded");
+  ClearChild(container_ch);
+
+  var row_count=0;
+  var recorded=Channels["recorded_channels"];
+  var current_row=AppendChannelBoxRowContainer(container_ch,row_count);
+  var wr=current_row.clientWidth;//width row
+  //var wr=current_row.offsetWidth;//width row
+  var wl=wr;//width left
+  var w=-1;
+  var column_count=0;
+  //var item_count=0;
+  var SelectedCount=SelectedItem==null?0:SelectedItem.getAttribute("item_count");
+  var parentCount=SelectedParent==null?-1:SelectedParent.getAttribute("item_count");
+
+  var showVideoTarget=null;
+ 
+  for(var item in recorded){
+    if(recorded[item].videos.length==0){
+      //item_count++;
+      continue;
+    }
+    var item_count=parseInt(item);
+    var div=AppendChannelBoxRecorded(current_row,recorded[item],row_count,column_count,item_count);
+    if((item_count==SelectedCount && SelectedParent==null)||parentCount==item_count){
+      div.classList.add("selected");
+      ScrollInto(div);
+      SelectedItem=div;
+    }
+    if(parentCount==item_count){
+      showVideoTarget=div;
+    }
+    var style=window.getComputedStyle(div);
+    var margin_left=parseInt(style.getPropertyValue('margin-left'));
+    w=div.offsetWidth+margin_left;
+
+    wl-=w;
+    column_count++;
+    //item_count++;
+    if(wl<w+margin_left && parseInt(item)+1<recorded.length){
+      current_row.setAttribute("column_max",column_count);
+      row_count++;
+      column_count=0;
+      current_row=AppendChannelBoxRowContainer(container_ch,row_count);
+      wl=wr;
+    }
+  }
+
+  current_row.setAttribute("column_max",column_count);
+  current_row.setAttribute("last_row","true");
+
+  if(showVideoTarget!=null){
+    ShowVideosRecorded(showVideoTarget,SelectedCount);
+    SelectedParent=showVideoTarget;
+  }
+}
+
+function AppendChannelBoxRowContainer(container,row_count){
+  var div=document.createElement("div");
+  div.setAttribute("class","channel_row");
+  div.setAttribute("row",row_count);
+  container.appendChild(div);
+
+  return div;
+}
+
+function AppendChannelBoxRecorded(container,item,row_count,column_count,item_count){
+  var div=document.createElement("div");
+  div.setAttribute("class","channel_box");
+  div.setAttribute("row",row_count);
+  div.setAttribute("column",column_count);
+  div.setAttribute("item_count",item_count);
+  var videof=item.videos[0];
+  div.innerHTML="<img src='"+videof.thumbnail_url+"' /><div class='box_info'><p class='title'>"+videof.title+"...</p><p class='detail'><a href='http://ch.nicovideo.jp/"+item.channel_id+"'>"+item.channel_id+"</a></p></div>";
+  //div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
+  //AppendVideoGroup(div,item);
+  container.appendChild(div);
+
+  div.addEventListener("click",function() {
+    SelectionClear();
+    CloseVideos();
+    SelectionClear();
+    SelectItemDiv(div);
+    ShowVideosRecorded(div,0);
+  },false);
+  return div;
+}
+
+function AppendVideoGroup(container,item){
+  var div=document.createElement("div");
+  div.setAttribute("class","video_group");
+  var html="";
+  var videos=item.videos;
+  for(var key in videos){
+    var video=videos[key];
+    html+="<a href='"+video.player_url+"'>"+video.title+"</a>(<a href='http://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
+  }
+  div.innerHTML=html;
+  container.appendChild(div);
+}
+
+function ClearChild(container){
+  while(container.hasChildNodes()){container.removeChild(container.lastChild);}
+}
+
+function GetData(callback){
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function()
+  {
+    if( this.readyState == 4 && this.status == 200 )
+    {
+      Channels = this.response;
+      callback();
+    }
+  }
+
+  xhr.open( 'GET', 'api.cgi', true );
+  xhr.responseType = 'json';
+  xhr.send( null );
+}
+//]]>
+    </script>
+  </body>
+</html>
+  

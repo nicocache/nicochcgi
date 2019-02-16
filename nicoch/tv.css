@@ -1,0 +1,139 @@
+@charset "utf-8"; 
+
+body{
+ font-size:13px;
+ background-color:rgb(40,40,40);
+ margin:0;
+ user-select: none;
+}
+
+h1{
+  font-size:2em;
+  color:white;
+  margin:1em;
+}
+
+p{
+  color:white;
+  margin:0.5rem;
+}
+
+p.title{
+  font-size:1.3em;
+}
+
+p.detail{
+  font-size:1em;
+  color:#aaa;
+}
+
+a{
+ color:black;
+ text-decoration:none;
+}
+a:link {
+ color: white;
+}
+a:visited {
+ color: #999;
+ }
+a:hover {
+ color: #aaa;
+}
+a:active {
+ color: #aaa;
+}
+
+div.container{
+  margin: 1rem 0;
+/*  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;*/
+}
+
+div.channel_row{
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+iframe.channel_thumb{
+ margin:5px;
+ width:312px;
+ height:176px;
+ border:1px black solid;
+}
+
+div.channel_box{
+ width:16rem;
+ height:16rem;
+ margin:1rem;
+ filter: drop-shadow(0px 0px 0.5rem rgba(0,0,0,0));
+ background-color:#6660;
+ transition: box-shadow 0.2s ease, background-color 0.2s ease;
+ overflow:hidden;
+}
+
+div.channel_box:hover{
+ background-color:#666;
+ filter: drop-shadow(0px 0px 0.5rem rgba(0,0,0,0.8));
+}
+
+div.channel_box.selected{
+ background-color:white;
+ filter: drop-shadow(0px 0px 0.5rem rgba(0,0,0,0.8));
+}
+
+div.channel_box.selected p,div.channel_box.selected a{
+ color: black
+}
+div.channel_box.selected a:visited {
+ color: #777;
+ }
+div.channel_box.selected a:hover {
+ color: #555;
+}
+div.channel_box.selected a:active {
+ color: #555;
+}
+
+div.channel_box img{
+  width:16rem;
+  height:9rem;
+  object-fit: cover;
+}
+
+div.video_group{
+  background-color:#EEE;
+  box-shadow: 0 0 3rem 1rem rgba(0,0,0,0.4) inset;
+}
+
+div.video_box{
+  width:16rem;
+  height:16rem;
+  margin:1rem;
+  background-color:#BBB0;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  overflow:hidden;
+}
+
+div.video_box p,div.video_box a{
+  color:black;
+}
+
+div.video_box.selected{
+ background-color:black;
+ filter: drop-shadow(0px 0px 0.5rem rgba(0,0,0,0.8));
+}
+
+div.video_box.selected p,div.video_box.selected a{
+ color: white;
+}
+
+
+div.video_box img{
+  width:16rem;
+  height:9rem;
+  object-fit: cover;
+}
+

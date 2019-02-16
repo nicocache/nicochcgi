@@ -53,15 +53,35 @@
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
         var video1=document.getElementsByTagName("video")[0];
-        if(e.keyCode==37){video1.currentTime-=10;}
-        else if(e.keyCode==39){video1.currentTime+=10;}
-        else if(e.keyCode==38){video1.volume=Math.min(video1.volume+0.1,1.0);}
-        else if(e.keyCode==40){video1.volume=Math.max(video1.volume-0.1,0.0);}
-        else if(e.keyCode==32 && video1.paused){video1.play();}
-        else if(e.keyCode==32){video1.pause();}
-        else if(e.keyCode==67){ToggleComment();}
-        else if(e.keyCode==77){video1.muted=!video1.muted;}
-        else if(e.keyCode==70){ToggleFullScreenStatus();}
+        if(e.keyCode==37 || e.keyCode==227 || e.key=="ArrowLeft" || e.key=="Left"){
+          video1.currentTime-=10;
+          SetMessageCanvas("-10秒",1000);
+          e.preventDefault();
+        }
+        else if(e.keyCode==39 || e.keyCode==228 || e.key=="ArrowRight" || e.key=="Right"){
+          video1.currentTime+=10;
+          SetMessageCanvas("+10秒",1000);
+          e.preventDefault();
+        }
+        else if(e.keyCode==38 || e.key=="ArrowUp" || e.key=="Up"){
+          video1.volume=Math.min(video1.volume+0.1,1.0);
+          SetMessageCanvas("Volume: "+Math.floor(video1.volume*100)+"%",1000);
+          e.preventDefault();
+        }
+        else if(e.keyCode==40 || e.key=="ArrowDown" || e.key=="Down"){
+          video1.volume=Math.max(video1.volume-0.1,0.0);
+          SetMessageCanvas("Volume: "+Math.floor(video1.volume*100)+"%",1000);
+          e.preventDefault();
+        }
+        else if(e.keyCode==32 || e.keyCode==179 || e.key=="Spacebar" || e.key==" " || e.key=="MediaPlayPause"){
+          if(video1.paused){video1.play();}else{video1.pause();}
+          e.preventDefault();
+        }
+        else if(e.key=="Play" && video1.paused){video1.play();e.preventDefault();}
+        else if((e.key=="Pause" || e.key=="MediaPause") && !video1.paused){video1.pause();e.preventDefault();}
+        else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){ToggleComment();e.preventDefault();}
+        else if(e.keyCode==77 || e.key=="m"){video1.muted=!video1.muted;e.preventDefault();}
+        else if(e.keyCode==70 || e.key=="f"){ToggleFullScreenStatus();e.preventDefault();}
       }
       function ToggleFps(){
         if(Fps==60){Fps=15;}
@@ -264,8 +284,14 @@
           var canvas1=document.getElementsByTagName("canvas")[0];
           var context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
+
+          SetMessageCanvas("コメントオフ",1000);
         }
-        else{document.getElementById("toggle_comment").innerText="コメントオン";}
+        else{
+          document.getElementById("toggle_comment").innerText="コメントオン";
+
+          SetMessageCanvas("コメントオン",1000);
+        }
 
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }

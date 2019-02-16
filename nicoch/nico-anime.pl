@@ -13,10 +13,15 @@ require File::Spec->catfile(dirname(__FILE__),"common.pl");
 
 binmode(STDOUT, ":utf8");
 
-open(LOCK, File::Spec->catfile(dirname(__FILE__),"lock"));
-flock(LOCK, 2);
+$| = 1;
 
 print "Log\nTime: ".time."\n";
+
+print "Locked...\n";
+open(LOCK, File::Spec->catfile(dirname(__FILE__),"lock"));
+flock(LOCK, 2);
+print "Unlocked!\n";
+
 my $mach = Net::Netrc->lookup('nicovideo');
 my ($nicologin, $nicopassword, $nicoaccount) = $mach->lpa;
 
@@ -73,7 +78,7 @@ foreach my $url (@url) {
             next;
         }
 
-        warn "download $file\n";
+        print "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
           my $vurl= $client->prepare_download($video_id);
@@ -100,7 +105,7 @@ foreach my $url (@url) {
             my $max_retry_count=3;
             while($i<$max_retry_count && $dl_downloaded!=$dl_size_org){
               $i++;
-              warn $dl_downloaded."B / ".$dl_size."B downloaded. Continue.";
+              print $dl_downloaded."B / ".$dl_size_org."B downloaded. Continue.\n";
               sleep 30;
               my $vurl2= $client->prepare_download($video_id);
               if ($vurl2=~ /low$/){die "low quality";}
