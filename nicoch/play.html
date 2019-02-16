@@ -55,22 +55,22 @@
         var video1=document.getElementsByTagName("video")[0];
         if(e.keyCode==37 || e.keyCode==227 || e.key=="ArrowLeft" || e.key=="Left"){
           video1.currentTime-=10;
-          SetMessageCanvas("-10秒",1000);
+          ShowCurrentTime();
           e.preventDefault();
         }
         else if(e.keyCode==39 || e.keyCode==228 || e.key=="ArrowRight" || e.key=="Right"){
           video1.currentTime+=10;
-          SetMessageCanvas("+10秒",1000);
+          ShowCurrentTime();
           e.preventDefault();
         }
         else if(e.keyCode==38 || e.key=="ArrowUp" || e.key=="Up"){
-          video1.volume=Math.min(video1.volume+0.1,1.0);
-          SetMessageCanvas("Volume: "+Math.floor(video1.volume*100)+"%",1000);
+          video1.volume=Math.min(video1.volume+0.05,1.0);
+          ShowVolume();
           e.preventDefault();
         }
         else if(e.keyCode==40 || e.key=="ArrowDown" || e.key=="Down"){
-          video1.volume=Math.max(video1.volume-0.1,0.0);
-          SetMessageCanvas("Volume: "+Math.floor(video1.volume*100)+"%",1000);
+          video1.volume=Math.max(video1.volume-0.05,0.0);
+          ShowVolume();
           e.preventDefault();
         }
         else if(e.keyCode==32 || e.keyCode==179 || e.key=="Spacebar" || e.key==" " || e.key=="MediaPlayPause"){
@@ -82,6 +82,16 @@
         else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){ToggleComment();e.preventDefault();}
         else if(e.keyCode==77 || e.key=="m"){video1.muted=!video1.muted;e.preventDefault();}
         else if(e.keyCode==70 || e.key=="f"){ToggleFullScreenStatus();e.preventDefault();}
+      }
+      function ShowCurrentTime(){
+        var video=document.getElementsByTagName("video")[0];
+        var t = video.currentTime;
+        var tx = Math.floor(t/60)+":"+("00"+(Math.floor(t)%60)).slice(-2);
+        SetMessageCanvas(tx,1000);
+      }
+      function ShowVolume(){
+        var video=document.getElementsByTagName("video")[0];
+        SetMessageCanvas("音量: "+Math.round(video.volume*100)+"%",1000);
       }
       function ToggleFps(){
         if(Fps==60){Fps=15;}
@@ -277,22 +287,20 @@
         document.body.style.backgroundColor=Background;
       }
       function ToggleComment(){
-        ShowComment=!ShowComment;
-        if(!ShowComment){
-        var storage=localStorage;
+        if(ShowComment){
+          SetMessageCanvas("コメントオフ",1000);
+
           document.getElementById("toggle_comment").innerText="コメントオフ";
           var canvas1=document.getElementsByTagName("canvas")[0];
           var context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
-
-          SetMessageCanvas("コメントオフ",1000);
         }
         else{
           document.getElementById("toggle_comment").innerText="コメントオン";
 
           SetMessageCanvas("コメントオン",1000);
         }
-
+        ShowComment=!ShowComment;
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
       function SetFromLocationHash(){
@@ -331,15 +339,10 @@
         return Math.min(vpos,duration*100-cmDuration*0.5);
       }
       function DrawComment(){
-        if(!ShowComment){return;}
         var canvas1=document.getElementsByTagName("canvas")[0];
         var video1=document.getElementsByTagName("video")[0];
         var context1=canvas1.getContext('2d');
         context1.clearRect(0,0,canvas1.width,canvas1.height);
-//debug
-/*
-        context1.beginPath();
-*/
 
         var height=canvas1.width/855*30;
         var time=video1.currentTime;
@@ -365,6 +368,7 @@
           context1.globalAlpha=1.0;
           fontName="";
         }
+        if(!ShowComment){return;}
 
         context1.font=GetFontText(height,1,fontName,fontWeight);
 
