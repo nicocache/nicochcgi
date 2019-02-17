@@ -30,6 +30,10 @@
   </head>
   <body>
     <h1>チャンネル一覧</h1>
+<!--
+    <div class='control'>
+      <a href="#" onclick='ElementRequestPointerLock(this);return false;'>ポインタロック</a>
+    </div>-->
     <div class='channel_group container' id="container_channel_recorded"></div>
     <script type="text/javascript"> 
 //<[CDATA[
@@ -79,10 +83,32 @@ window.onresize = function () {
  
   timerResize = setTimeout(function () {
     ShowChannels();
-  }, 200);
+  }, 500);
 };
 
+function ElementRequestPointerLock(element){
+  var list = [
+    "requestPointerLock",
+    "webkitRequestPointerLock",
+    "mozRequestPointerLock"
+  ];
+  var i;
+  var num = list.length;
+  for(i=0;i < num;i++){
+  if(element[list[i]]){
+    element[list[i]]();
+    return true;
+    }
+  }
+  return false;
+}
+
+
 function OpenVideo(item){
+  if(SelectedParent!=null){
+    //ビデオを開けるならSelectedParentは設定されてるはず。
+    localStorage.setItem("niconico_last_played_channel",SelectedParent.getAttribute("channel_id"));
+  }
   window.location.href = item.getAttribute("player_url");
 }
 
@@ -205,7 +231,7 @@ function GetSelectedContainer(){
 }
 
 function ShowVideosRecorded(channel_div,targetCount){
-  localStorage.setItem("niconico_last_played_channel",channel_div.getAttribute("channel_id"));
+  //localStorage.setItem("niconico_last_played_channel",channel_div.getAttribute("channel_id"));
 
   var container=document.createElement("div");
   container.setAttribute("class","video_group container");  
@@ -213,7 +239,6 @@ function ShowVideosRecorded(channel_div,targetCount){
   channel_div.parentNode.parentNode.insertBefore(container,channel_div.parentNode.nextSibling);
 
   var row_count=0;
-//ToDo: fix;
   var channel = Channels["recorded_channels"][parseInt(channel_div.getAttribute("item_count"))];
   var current_row=AppendChannelBoxRowContainer(container,row_count);
   var wr=current_row.clientWidth;
@@ -286,23 +311,25 @@ function ShowChannelsRecorded(lastChannel){
   var wl=wr;//width left
   var w=-1;
   var column_count=0;
-  //var item_count=0;
   var SelectedCount=SelectedItem==null?0:SelectedItem.getAttribute("item_count");
   var parentCount=SelectedParent==null?-1:SelectedParent.getAttribute("item_count");
 
   var showVideoTarget=null;
  
-console.log(lastChannel);
   for(var item in recorded){
     if(recorded[item].videos.length==0){
-      //item_count++;
       continue;
     }
     var item_count=parseInt(item);
     var div=AppendChannelBoxRecorded(current_row,recorded[item],row_count,column_count,item_count);
     if((item_count==SelectedCount && SelectedParent==null && lastChannel==null) || parentCount==item_count || (SelectedParent==null && lastChannel==recorded[item].channel_id)){
       div.classList.add("selected");
-      ScrollInto(div);
+      //ScrollInto(div);
+      div.scrollIntoView({
+        behavior: 'instant',
+        block: 'nearest',
+        inline: 'nearest',});
+
       SelectedItem=div;
     }
     if(parentCount==item_count){
@@ -314,7 +341,6 @@ console.log(lastChannel);
 
     wl-=w;
     column_count++;
-    //item_count++;
     if(wl<w+margin_left && parseInt(item)+1<recorded.length){
       current_row.setAttribute("column_max",column_count);
       row_count++;
@@ -351,8 +377,6 @@ function AppendChannelBoxRecorded(container,item,row_count,column_count,item_cou
   div.setAttribute("channel_id",item.channel_id);
   var videof=item.videos[0];
   div.innerHTML="<img src='"+videof.thumbnail_url+"' /><div class='box_info'><p class='title'>"+videof.title+"...</p><p class='detail'><a href='http://ch.nicovideo.jp/"+item.channel_id+"'>"+item.channel_id+"</a></p></div>";
-  //div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
-  //AppendVideoGroup(div,item);
   container.appendChild(div);
 
   div.addEventListener("click",function() {
@@ -363,19 +387,6 @@ function AppendChannelBoxRecorded(container,item,row_count,column_count,item_cou
     ShowVideosRecorded(div,0);
   },false);
   return div;
-}
-
-function AppendVideoGroup(container,item){
-  var div=document.createElement("div");
-  div.setAttribute("class","video_group");
-  var html="";
-  var videos=item.videos;
-  for(var key in videos){
-    var video=videos[key];
-    html+="<a href='"+video.player_url+"'>"+video.title+"</a>(<a href='http://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
-  }
-  div.innerHTML=html;
-  container.appendChild(div);
 }
 
 function ClearChild(container){

@@ -1,14 +1,15 @@
 @charset "utf-8"; 
 
-body{
- font-size:13px;
+body,html{
+ /*font-size:1vw;*/
+ font-size:100%;
  background-color:rgb(40,40,40);
  margin:0;
  user-select: none;
 }
 
 h1{
-  font-size:2em;
+  font-size:r2em;
   color:white;
   margin:1em;
 }
@@ -42,6 +43,14 @@ a:hover {
 }
 a:active {
  color: #aaa;
+}
+
+div.control{
+  margin: 1rem;
+}
+
+div.control a{
+  color:white;
 }
 
 div.container{

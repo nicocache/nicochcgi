@@ -39,6 +39,9 @@ html, body { height:100%; margin:0; }
 .main {
   height: 100%;
 }
+form {
+  margin:0;
+}
 </style>
 </head>
 <body>
@@ -47,6 +50,7 @@ html, body { height:100%; margin:0; }
 <div class="menubar">
 <input type="submit" value="Save" />
 <input type="reset" value="Reset" />
+<input type="hidden" name="op" value="edit" />
 </div>
 <div class="main">
 <textarea name="a1" class="fix-height fix-width">
@@ -61,7 +65,6 @@ close(FILEIN);
 print <<"EOF";
 </textarea>
 </div>
-<input type="hidden" name="op" value="edit" />
 </form></div></body>
 </html>
 EOF
