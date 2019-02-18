@@ -26,7 +26,7 @@ password your_pass
 ```
 9. /var/www-data/.netrcにも同様に登録します。これは```commentproxy.pl```で使われます。なおこちらのみで、crontabをwww-dataに設定しても構いません。([参照](https://askubuntu.com/questions/189189/how-to-run-crontab-as-userwww-data))
 10. 自動ダウンロードを設定します。```sudo -u www-data crontab -e```で```10 3 * * *  perl /var/www/html/nicoch/nico-anime.pl  2>&1 | tee -a ~/nicoch.log ```とか。エコノミーユーザーの場合は低画質の時間は避けましょう。そうでなくてもサーバー負荷を分散するようにするべきです。
-11. サムネイル作成用にダウンロードフォルダに``script/mkthumb.sh``を配置し同様にcrontabを設定します。サムネイルはブラウザでは利用せずサードパーティーアプリ専用なので不要ならば必要ありません。
+11. サムネイル作成用にダウンロードフォルダに``script/mkthumb.sh``を配置し同様にcrontabを設定します。サムネイルはサードパーティーアプリとテレビ向けUI(tv.html)用なので不要ならば必要ありません。
 12. ブラウザでアクセスしてみて適当にチャンネルを登録します。
 
 ## play.html
