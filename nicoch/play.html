@@ -24,7 +24,7 @@
         <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()"></a>
         <!--<a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景</a>-->
         <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()">fps</a>
-        <a class="button" id="nicovideo_link" style="display:none;" href="https://www.nicovideo.jp/watch/">公式へ</a>
+        <a class="button" id="nicovideo_link" onclick="return ! OpenInNicovideo();" style="display:none;" href="https://www.nicovideo.jp/watch/">公式へ</a>
         <span id="message" style="color:#888;"></span>
       </div>
     </div>
@@ -33,6 +33,8 @@
       var CanvasMessage="";
       var CanvasMessageDeadline=0;
       var CommentTimer;
+      var ChennelId;
+      var MovieId;
       CommentSource="";
       ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
       ShowComment=!ShowComment;
@@ -314,19 +316,24 @@
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
       function SetFromLocationHash(){
+        var video1=document.getElementsByTagName("video")[0];
         //IMPORTANT:
         //動画・コメントプロキシの設定はここを変更してください。
         var hash=window.location.hash.split(":");
         var id=hash[0].slice(1);
+        //コメントプロキシ設定
         CommentSource="commentproxy.cgi?id="+id;
-        var video1=document.getElementsByTagName("video")[0];
         if(hash[1]){
-          video1.src="movie.cgi?c="+hash[1]+"&v="+id;
+          ChannelId=hash[1];
+          //動画アドレス設定
+          video1.src="movie.cgi?c="+ChannelId+"&v="+id;
         }else{
+          //動画アドレス設定
           video1.src="movie.cgi?v="+id;
         }
 
         UpdateLinkId(id);
+        MovieId=id;
 
         var storage=localStorage;
         var vol=storage.getItem("niconico_volume");
@@ -336,6 +343,14 @@
         var link=document.getElementById("nicovideo_link");
         link.setAttribute("href", "https://www.nicovideo.jp/watch/"+id);
         link.style.display="inline";
+      }
+      function OpenInNicovideo(){
+        if(MovieId){
+          var video=document.getElementsByTagName("video")[0];
+          window.location.href = "http://www.nicovideo.jp/watch/"+MovieId+"?from="+Math.floor(video.currentTime);
+          return true;
+        }
+        return false;
       }
       function CheckRanges(ranges,range){
         if(!ranges){return true;}
