@@ -11,12 +11,12 @@
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;" >
-      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);">
+      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
       <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
-        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="document.getElementById('toggle_fullscreen_center').style.display='none';ToggleFullScreenStatus()" style="background:rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
+        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="HideFullScreenCenter();ToggleFullScreenStatus();return false;" style="color(255,255,255,0.5);background:rgba(0,0,0,0.0);border:1px solid rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
       </div>
       <div id="controller" style="position:absolute;z-index:4;top:0px;">
         <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ</a>
@@ -47,8 +47,12 @@
       SetTouchEvent();
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       SetFpsDisplay();
-      setTimeout(function(){document.getElementById("toggle_fullscreen_center").style.display="none";},1000);
+      setTimeout(function(){HideFullScreenCenter();},3000);
       SetControllerVisibility(false);
+      
+      function HideFullScreenCenter(){
+        document.getElementById("toggle_fullscreen_center").style.display="none";
+      }
 
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
@@ -175,6 +179,12 @@
       function ToggleFullScreenStatus(){
         if(document.fullscreenElement == null){
           requestFullscreen();
+          
+          var locker = screen.lockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
+          if (locker != null && screen.lockOrientationUniversal("landscape")) {
+          }else if(screen.orientation.lock != null){
+            screen.orientation.lock("landscape").then(function(){/* Locked */},function(/* Lock failed */){});
+          }
         }else{
           exitFullscreen();
         }
