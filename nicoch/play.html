@@ -16,7 +16,7 @@
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
       <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
-        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="HideFullScreenCenter();ToggleFullScreenStatus();return false;" style="color(255,255,255,0.5);background:rgba(0,0,0,0.0);border:1px solid rgba(0,0,0,0.3);font-size:200%;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
+        <a class="button" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="HideFullScreenCenter();ToggleFullScreenStatus();return false;" style="color:rgba(255,255,255,0.5);background:rgba(0,0,0,0.0);border:0.1vw solid rgba(127,127,127,0.3);font-size:10vw;top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
       </div>
       <div id="controller" style="position:absolute;z-index:4;top:0px;">
         <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()">サイズ</a>
@@ -406,6 +406,7 @@
         var operatedComments=[];
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
+          comment.text=comment.text.replace('\t','      ');//タブをスペースに置換。
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
@@ -439,9 +440,11 @@
             var overflow=false;
             var modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
-              {comment.width=context1.measureText(comment.text).width;}
+            for(var line of comment.text.split('\n'))
+              {comment.width=Math.max(context1.measureText(line).width,comment.width);}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
+              if(ContainsCommand(comment.mail,"ender")){}else{
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
@@ -457,6 +460,7 @@
                     r.y=crtr.b;
                   }
                 }
+              }
               }
               comment.lastY=r.y/canvas1.width;
               if(comment.width>canvas1.width){
@@ -475,6 +479,7 @@
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
+              if(ContainsCommand(comment.mail,"ender")){}else{
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
@@ -490,6 +495,7 @@
                     r.y=crtr.b;
                   }
                 }
+              }
               }
               comment.lastY=r.y/canvas1.width;
 
@@ -539,7 +545,11 @@ context1.stroke();
             context1.shadowOffsetX=0;
             context1.shadowOffsetY=0;
             context1.shadowBlur=height*blurScale;
-            context1.fillText(commenttext,r.x,r.y);
+            //context1.fillText(commenttext,r.x,r.y);
+            var lines=commenttext.split('\n');
+            for(var key in lines){
+              context1.fillText(lines[key],r.x,r.y+height*heightScale*parseInt(key));
+            }
             context1.globalAlpha=1.0;
           }
         }
