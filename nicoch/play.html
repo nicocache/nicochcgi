@@ -21,7 +21,7 @@
         <a class="button_full" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="HideFullScreenCenter();ToggleFullScreenStatus();return false;" 
           style="top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
       </div>
-      <div id="controller" style="position:absolute;z-index:4;top:0px;background-color:black;">
+      <div id="controller" style="top:70%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;z-index:4;background-color:black;">
         <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()" title="画面サイズ">
           <svg version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="20" height="20"
 	    viewBox="0 0 11.339 11.339" overflow="visible" enable-background="new 0 0 11.339 11.339" xml:space="preserve">
@@ -32,7 +32,7 @@
 	    <line fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linejoin="round" stroke-miterlimit="500" x1="1.701" y1="5.669" x2="9.638" y2="5.669"/>
 	  </svg>
         </a>
-        <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="ToggleFullScreenStatus()" title="フルスクリーン">
+        <a class="button" id="toggle_fullscreen" href="javascript:void(0);" onclick="ToggleFullScreenStatus()" title="フルスクリーン(F)">
           <svg  version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="20" height="20"
              viewBox="0 0 11.338 11.339" overflow="visible" enable-background="new 0 0 11.338 11.339" xml:space="preserve">
             <polyline fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" points="
@@ -49,7 +49,7 @@
             <line fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" x1="9.638" y1="1.701" x2="6.431" y2="4.908"/>
        	  </svg>
         </a>
-        <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()" title="コメント">
+        <a class="button" id="toggle_comment" href="javascript:void(0);" onclick="ToggleComment()" title="コメント(C)">
           <svg  version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="20" height="20"
             viewBox="0 0 11.338 11.339" overflow="visible" enable-background="new 0 0 11.338 11.339" xml:space="preserve">
             <polyline fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" points="
@@ -68,7 +68,7 @@
             <path fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" d="M8.927,7.937c-1.908-1.512-4.605-1.512-6.514,0"/>
           </svg>
         </a>
-        <span id="message" style="color:#888;"></span>
+        <span id="message" style="color:#888;text-align:center;"></span>
       </div>
     </div>
     <script>
@@ -189,6 +189,7 @@
           SetMessageCanvas(message,0);
       }
       function SetMessageCanvas(message,timespan){
+          //SetMessage(message);
           CanvasMessage=message;
           if(timespan!=0){
             CanvasMessageDeadline=(new Date()).getTime()+timespan;
@@ -485,6 +486,7 @@
             var overflow=false;
             var modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
+            comment.width=-1;
             for(var line of comment.text.split('\n'))
               {comment.width=Math.max(context1.measureText(line).width,comment.width);}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
