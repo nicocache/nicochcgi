@@ -9,6 +9,11 @@
       a.button{display: inline-block;padding: 0.3em 1em;text-decoration: none;color: #FFF; vertical-align: middle;}
       a.button_full{display: inline-block;padding: 0.7em 0.7em;text-decoration: none;
         color:rgba(255,255,255,0.5);background:rgba(0,0,0,0.0);border:0.1vw solid rgba(127,127,127,0.3);font-size:10vw;}
+      #contextmenu{display: none;color:white;position:absolute;z-index:5;top:0;left:0;background-color:black;border:1px solid #888;margin:0;
+        text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
+      #contextmenu p.title{margin:0.3em;margin-bottom:0;font-weight: bold;}
+      #contextmenu p.menu{margin:0 0.3em;cursor: pointer;display: block;}
+      #contextmenu.show{display: block;text-decoration:none;}
     </style>
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
@@ -20,6 +25,8 @@
       <div style="pointer-events:none;margin:0 auto;top:0;position:relative;z-index:3;background:transparent;width:100%;height:100%;">
         <a class="button_full" id="toggle_fullscreen_center" href="javascript:void(0);" onclick="HideFullScreenCenter();ToggleFullScreenStatus();return false;" 
           style="top:50%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;">全画面</a>
+      </div>
+      <div id="contextmenu">
       </div>
       <div id="controller" style="top:70%;position:absolute;transform:translateY(-50%) translateX(-50%);left:50%;pointer-events:auto;z-index:4;background-color:black;">
         <a class="button" href="javascript:void(0);" onclick="ToggleFullScreen()" title="画面サイズ">
@@ -78,6 +85,7 @@
       var CommentTimer;
       var ChennelId;
       var MovieId;
+      var CommentDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
       CommentSource="";
       ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
       ShowComment=!ShowComment;
@@ -95,6 +103,67 @@
       setTimeout(function(){HideFullScreenCenter();},3000);
       SetControllerVisibility(false);
       
+      document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
+        var canvas1=document.getElementsByTagName("canvas")[0];
+        var w=canvas1.width;
+        var menu = document.getElementById("contextmenu");
+        if(menu.classList.contains('show')) {
+          menu.classList.remove('show');
+        }
+        while (menu.firstChild) menu.removeChild(menu.firstChild);
+        for(var i=0;i<Comments.length;i++){
+          var comment=Comments[i];
+          if(comment.lastDisplayed && comment.lastX * w < e.offsetX && e.offsetX < comment.lastX * w + comment.lastWidth * w
+            && comment.lastYReal * w < e.offsetY && e.offsetY < comment.lastYReal * w + comment.lastHeight * w
+            ){
+            
+            var text=comment.text;
+            
+            var p = document.createElement('p');
+            p.innerText=text.replace(/\n/g, '↵');
+            p.classList.add('title');
+            menu.appendChild(p);
+            
+            if(comment.mail!=null && comment.mail != ""){
+              var m = document.createElement('p');
+              m.innerText="コマンド:"+comment.mail;
+              m.classList.add('menu');
+              menu.appendChild(m);
+            }
+            
+            var a = document.createElement('p');
+            a.innerText="コメントをコピー";
+            a.classList.add('menu');
+            a.addEventListener("click", function(e){
+              document.getSelection().selectAllChildren(p);
+              document.execCommand("copy");  
+              },false);
+            menu.appendChild(a);
+            
+            var gg = document.createElement('p');
+            gg.classList.add('menu');
+            gg.innerText="コメントを検索";
+            gg.addEventListener("click", function(e){
+              window.open('https://www.google.co.jp/search?hl=ja&q='+encodeURI(text));
+              },false);
+            menu.appendChild(gg);
+
+            menu.classList.add('show');
+            menu.style.left=Math.min(e.offsetX,canvas1.width-parseInt(window.getComputedStyle(menu).width))+"px";
+            console.log(e.offsetX+" "+canvas1.width+" "+window.getComputedStyle(menu).width);
+            menu.style.top=e.offsetY+"px";
+            
+            e.preventDefault();
+          }
+        }
+        
+      },false);
+      document.body.addEventListener('click',function(){
+        var menu = document.getElementById("contextmenu");
+        if(menu.classList.contains('show')) {
+          menu.classList.remove('show');
+        }
+      },false);
       function HideFullScreenCenter(){
         document.getElementById("toggle_fullscreen_center").style.display="none";
       }
@@ -447,23 +516,15 @@
         var rangesUe=[];
         var rangesShita=[];
 	        
-        var cmDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
-        var occupiedPlaces=[];
+        var cmDuration=CommentDuration;
         var operatedComments=[];
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
+          comment.lastDisplayed=0;
           comment.text=comment.text.replace('\t','      ');//タブをスペースに置換。
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
-            var occupiedPlace=function(rx,y,width,height,orgx,p){
-              this.x=rx;
-              this.y=y;
-              this.width=width;
-              this.height=height;
-              this.orgx=x;
-              this.p=p;
-            };
 
             var heightScale=1;
             if(comment.fontScale>0){heightScale=comment.fontScale;}
@@ -523,6 +584,7 @@
               }
 
 //              r.y+=height*(heightScale-1);
+              comment.lastYReal=r.y/canvas1.width;
               context1.textBaseline="top";
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
             }
@@ -558,13 +620,15 @@
 context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
 context1.stroke();
 */
+              var lineCnt=comment.text.split('\n').length;
               if(!ContainsCommand(comment.mail,"ender")){
-                var lineCnt=comment.text.split('\n').length;
-                rangesShita.push(new range(r.y-(lineCnt-1)*height*heightScale,lineCnt*height*heightScale));
+                rangesShita.push(new range(r.y,lineCnt*height*heightScale));
+                //rangesShita.push(new range(r.y,height*heightScale));
               }
 
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
-              r.y=canvas1.height-r.y;
+              r.y=canvas1.height-r.y-(lineCnt-1)*height*heightScale;
+              comment.lastYReal=(r.y-height*heightScale)/canvas1.width;
 
               context1.textBaseline="bottom";
             }else{
@@ -575,13 +639,12 @@ context1.stroke();
               r.y+=height/2.0;
               operatedComments.push(comment);
               context1.textBaseline="middle";
+              comment.lastYReal=(r.y-height*heightScale/2.0)/canvas1.width;
 //context1.rect(r.x,r.y,comment.width,height);
 //context1.stroke();
             }
             comment.fontScale=heightScale;
 
-            //r.y=(r.y%modnum+modnum)%modnum;
-            //r.y=Math.floor((r.y%canvas1.height)/height)*height;
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなので\u29F5(REVERSE SOLIDUS OPERATOR)で代替
             var commenttext=comment.text.replace("\\","\u29F5");
@@ -597,9 +660,16 @@ context1.stroke();
             context1.shadowOffsetX=0;
             context1.shadowOffsetY=0;
             context1.shadowBlur=height*blurScale;
-            //context1.fillText(commenttext,r.x,r.y);
+            
+            var lines=commenttext.split('\n');
+            
+            comment.lastX=r.x/canvas1.width;
+            comment.lastWidth=comment.width/canvas1.width;
+            comment.lastHeight=height*heightScale*lines.length/canvas1.width;
+            comment.lastDisplayed=1;
+
             var lineCnt=0;
-            for(var line of commenttext.split('\n')){
+            for(var line of lines){
               context1.fillText(line,r.x,r.y+height*heightScale*lineCnt);
               lineCnt++;
             }
@@ -710,6 +780,12 @@ testContext.stroke();
             this.width=-1;
             this.lastCnt=-1;
             this.fontScale=-1;
+            //for contextmenu
+            this.lastYReal=-1;
+            this.lastX=-1;
+            this.lastWidth=-1;
+            this.lastDisplayed=0;
+            this.lastHeight=-1;
           }
           var chatT=chats[i];
           var atdeleted=chats[i].getAttribute("deleted");

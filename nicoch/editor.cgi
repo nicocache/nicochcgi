@@ -58,6 +58,9 @@ EOF
 
 open FILEIN, "<", "chlist.txt" or die "error";
 while(<FILEIN>){
+s/&/&amp;/g;
+s/</&lt;/g;
+s/>/&gt;/g;
 print;
 }
 close(FILEIN);
