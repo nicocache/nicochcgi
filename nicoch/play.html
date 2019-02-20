@@ -65,6 +65,17 @@
         </a>
         <!--<a class="button" href="javascript:void(0);" onclick="ToggleBackground()">背景</a>-->
         <a class="button" id="toggle_fps" href="javascript:void(0);" onclick="ToggleFps()" title="コメント描画頻度">fps</a>
+        <a class="button" id="toggle_pip" href="javascript:void(0);" onclick="TogglePictureInPicture();" title="ピクチャーインピクチャー">
+          <svg  version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="20" height="20"
+            viewBox="0 0 11.339 11.339" overflow="visible" enable-background="new 0 0 11.339 11.339" xml:space="preserve">
+            <g>
+            <path fill="#FFFFFF" d="M9.67,1.97h-8c-0.388,0-0.7,0.313-0.7,0.7v6c0,0.387,0.313,0.699,0.7,0.699h8
+		c0.387,0,0.699-0.313,0.699-0.699v-6C10.369,2.283,10.057,1.97,9.67,1.97L9.67,1.97z M1.67,2.67h8v6l0,0l0,0h-8V2.67L1.67,2.67
+		L1.67,2.67z"/>
+            </g>
+            <rect x="5.67" y="5.419" fill="#FFFFFF" stroke="#FFFFFF" stroke-linejoin="round" width="3" height="2.25"/>
+          </svg>
+        </a>
         <a class="button" id="nicovideo_link" onclick="return ! OpenInNicovideo();" style="display:none;" href="https://www.nicovideo.jp/watch/" title="ニコニコ動画で見る">
           <svg version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="20" height="20" viewBox="0 0 11.34 11.339" overflow="visible" enable-background="new 0 0 11.34 11.339" xml:space="preserve">
             <circle fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" cx="5.67" cy="5.669" r="3.969"/>
@@ -86,22 +97,34 @@
       var ChennelId;
       var MovieId;
       var CommentDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
-      CommentSource="";
-      ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
-      ShowComment=!ShowComment;
-      ToggleComment();
-      SetFromLocationHash();
-      Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
-      ApplyBackgroundSetting();
-      FullScreenSetting=2;
-      ApplyFullScreenSetting();
-      window.addEventListener('resize',function(event){ApplyFullScreenSetting();});
       var OriginalCoord;
-      SetTouchEvent();
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
-      SetFpsDisplay();
-      setTimeout(function(){HideFullScreenCenter();},3000);
-      SetControllerVisibility(false);
+      var CommentSource="";
+      var ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
+      var FullScreenSetting=2;
+      var Comments="";
+
+      window.onload = function() {
+        //ShowComment=!ShowComment;
+        //ToggleComment();
+        SetFromLocationHash();
+        Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
+        ApplyBackgroundSetting();
+        ApplyFullScreenSetting();
+        window.addEventListener('resize',function(event){
+          ApplyFullScreenSetting();
+          //if(!document.pictureInPictureElement){document.getElementById("toggle_pip").style.opacity=1.0;}
+          });
+        SetTouchEvent();
+        SetFpsDisplay();
+        setTimeout(function(){HideFullScreenCenter();},3000);
+        SetControllerVisibility(false);
+        PreparePictureInPicture();
+        GetChatXML(function(xml) {
+          Comments=ParseComment(xml);
+          CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+        });
+      };
       
       document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
         var canvas1=document.getElementsByTagName("canvas")[0];
@@ -111,6 +134,7 @@
           menu.classList.remove('show');
         }
         while (menu.firstChild) menu.removeChild(menu.firstChild);
+        var hittest=false;
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
           if(comment.lastDisplayed && comment.lastX * w < e.offsetX && e.offsetX < comment.lastX * w + comment.lastWidth * w
@@ -126,7 +150,7 @@
             
             if(comment.mail!=null && comment.mail != ""){
               var m = document.createElement('p');
-              m.innerText="コマンド:"+comment.mail;
+              m.innerText=""+comment.mail;
               m.classList.add('menu');
               menu.appendChild(m);
             }
@@ -137,6 +161,9 @@
             a.addEventListener("click", function(e){
               document.getSelection().selectAllChildren(p);
               document.execCommand("copy");  
+              if(menu.classList.contains('show')) {
+                menu.classList.remove('show');
+              }
               },false);
             menu.appendChild(a);
             
@@ -144,21 +171,30 @@
             gg.classList.add('menu');
             gg.innerText="コメントを検索";
             gg.addEventListener("click", function(e){
+              if(menu.classList.contains('show')) {
+                menu.classList.remove('show');
+              }
               window.open('https://www.google.co.jp/search?hl=ja&q='+encodeURI(text));
               },false);
             menu.appendChild(gg);
-
-            menu.classList.add('show');
-            menu.style.left=Math.min(e.offsetX,canvas1.width-parseInt(window.getComputedStyle(menu).width))+"px";
-            console.log(e.offsetX+" "+canvas1.width+" "+window.getComputedStyle(menu).width);
-            menu.style.top=e.offsetY+"px";
             
-            e.preventDefault();
+            hittest=true;
           }
         }
-        
+        if(hittest){
+          menu.classList.add('show');
+          var calcstyle=window.getComputedStyle(menu);
+          menu.style.left=Math.min(e.offsetX,canvas1.width-parseInt(calcstyle.width)-10)+"px";
+          menu.style.top=e.offsetY+"px";
+          e.preventDefault();
+        }else{
+          if(menu.classList.contains('show')) {
+            menu.classList.remove('show');
+          }
+        }
       },false);
-      document.body.addEventListener('click',function(){
+      //document.body.addEventListener('click',function(){
+      document.getElementsByTagName("video")[0].addEventListener('click',function(){
         var menu = document.getElementById("contextmenu");
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
@@ -200,6 +236,29 @@
         else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){ToggleComment();e.preventDefault();}
         else if(e.keyCode==77 || e.key=="m"){video1.muted=!video1.muted;e.preventDefault();}
         else if(e.keyCode==70 || e.key=="f"){ToggleFullScreenStatus();e.preventDefault();}
+      }
+      function PreparePictureInPicture(){
+        var button=document.getElementById("toggle_pip");
+        button.style.display=document.pictureInPictureEnabled?"inline-block":"none";
+      }
+      function TogglePictureInPicture(){
+        var button=document.getElementById("toggle_pip");
+        var video=document.getElementsByTagName("video")[0];
+        if (!document.pictureInPictureElement) {
+          video.requestPictureInPicture()
+            .catch(error => {
+            button.style.display="none";
+            return;
+          });
+          //button.style.opacity=0.5;
+        } else {
+          document.exitPictureInPicture()
+            .catch(error => {
+            button.style.display="none";
+            return;
+          });
+          //button.style.opacity=1.0;
+        }
       }
       function ShowCurrentTime(){
         var video=document.getElementsByTagName("video")[0];
@@ -693,7 +752,7 @@ context1.stroke();
           var c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
           var d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
           if(
-            CheckY(ry,fontHeight,opCom.lastY*canvasWidth) &&
+            CheckY(fontHeight,ry,opCom.lastY*canvasWidth,comment.text.split('\n').length,opCom.text.split('\n').length) &&
                 (! ( ( (b<canvasWidth) && (0<a) && (cvpos2<=cvpos) ) || ( (c<canvasWidth) && (0<d) && (cvpos<cvpos2) ) ) )
 //                (! ( ( (b<canvasWidth) && (0<a) ) ) )
             ){
@@ -758,8 +817,8 @@ testContext.stroke();
         return "#ffffff";
       }
       function Coordinate(x,y){this.x=x;this.y=y;}
-      function CheckY(y1,fontHeight,y2){
-        return y1-fontHeight/2.0 < y2 && y2 < y1+fontHeight/2.0;
+      function CheckY(fontHeight,y1,y2,lineCnt1,lineCnt2){
+        return y1-fontHeight*(lineCnt2-0.5) < y2 && y2-fontHeight*(lineCnt1-0.5) < y1;
       }
       function ParseComment(xml){
         var result=[];
@@ -811,12 +870,6 @@ testContext.stroke();
         req.open('GET',CommentSource,true);
         req.send(null);
       }
-      Comments="";
-      GetChatXML(function(xml) {
-        Comments=ParseComment(xml);
-        CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
-      }
-);
 //]]>
     </script>
   </body>
