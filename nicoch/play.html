@@ -91,6 +91,25 @@
     </div>
     <script>
 //<![CDATA[
+      function SetVideoLocation(){
+        var video1=document.getElementsByTagName("video")[0];
+        //IMPORTANT:
+        //動画・コメントプロキシの設定はここを変更してください。
+        var hash=window.location.hash.split(":");
+        var id=hash[0].slice(1);
+        //コメントプロキシ設定
+        CommentSource="commentproxy.cgi?id="+id;
+        if(hash[1]){
+          ChannelId=hash[1];
+          //動画アドレス設定
+          video1.src="movie.cgi?c="+ChannelId+"&v="+id;
+        }else{
+          //動画アドレス設定
+          video1.src="movie.cgi?v="+id;
+        }
+        return id;
+      }
+
       var CanvasMessage="";
       var CanvasMessageDeadline=0;
       var CommentTimer;
@@ -105,9 +124,7 @@
       var Comments="";
 
       window.onload = function() {
-        //ShowComment=!ShowComment;
-        //ToggleComment();
-        SetFromLocationHash();
+        Init();
         Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
         ApplyBackgroundSetting();
         ApplyFullScreenSetting();
@@ -204,6 +221,17 @@
         document.getElementById("toggle_fullscreen_center").style.display="none";
       }
 
+      function Init(){
+        var id=SetVideoLocation();
+
+        var video1=document.getElementsByTagName("video")[0];
+        UpdateLinkId(id);
+        MovieId=id;
+
+        var storage=localStorage;
+        var vol=storage.getItem("niconico_volume");
+        if(vol){ video1.volume= vol;}
+      }
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
         var video1=document.getElementsByTagName("video")[0];
@@ -488,30 +516,6 @@
         }
         ShowComment=!ShowComment;
         localStorage.setItem("niconico_comment_enabled",ShowComment);
-      }
-      function SetFromLocationHash(){
-        var video1=document.getElementsByTagName("video")[0];
-        //IMPORTANT:
-        //動画・コメントプロキシの設定はここを変更してください。
-        var hash=window.location.hash.split(":");
-        var id=hash[0].slice(1);
-        //コメントプロキシ設定
-        CommentSource="commentproxy.cgi?id="+id;
-        if(hash[1]){
-          ChannelId=hash[1];
-          //動画アドレス設定
-          video1.src="movie.cgi?c="+ChannelId+"&v="+id;
-        }else{
-          //動画アドレス設定
-          video1.src="movie.cgi?v="+id;
-        }
-
-        UpdateLinkId(id);
-        MovieId=id;
-
-        var storage=localStorage;
-        var vol=storage.getItem("niconico_volume");
-        if(vol){ video1.volume= vol;}
       }
       function UpdateLinkId(id){
         var link=document.getElementById("nicovideo_link");
