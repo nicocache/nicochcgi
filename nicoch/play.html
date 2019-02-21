@@ -17,7 +17,7 @@
     </style>
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
-    <div id="VideoPlayer" style="margin:0 auto;position:relative;" >
+    <div id="VideoPlayer" style="margin:0 auto;position:relative;overflow:hidden;" >
       <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
@@ -145,7 +145,9 @@
       
       document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
         var canvas1=document.getElementsByTagName("canvas")[0];
-        var w=canvas1.width;
+        //var w=canvas1.width;
+        var canvasStyle=window.getComputedStyle(canvas1);
+        var w=parseInt(canvasStyle.width);
         var menu = document.getElementById("contextmenu");
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
@@ -175,24 +177,28 @@
             var a = document.createElement('p');
             a.innerText="コメントをコピー";
             a.classList.add('menu');
-            a.addEventListener("click", function(e){
-              document.getSelection().selectAllChildren(p);
-              document.execCommand("copy");  
-              if(menu.classList.contains('show')) {
-                menu.classList.remove('show');
+            a.addEventListener("click", (function(p){
+              return function(){
+                document.getSelection().selectAllChildren(p);
+                document.execCommand("copy");  
+                if(menu.classList.contains('show')) {
+                  menu.classList.remove('show');
+                }
               }
-              },false);
+              })(p),false);
             menu.appendChild(a);
             
             var gg = document.createElement('p');
             gg.classList.add('menu');
-            gg.innerText="コメントを検索";
-            gg.addEventListener("click", function(e){
-              if(menu.classList.contains('show')) {
-                menu.classList.remove('show');
+            gg.innerText="コメントで検索";
+            gg.addEventListener("click", (function(text){
+              return function(){
+                if(menu.classList.contains('show')) {
+                  menu.classList.remove('show');
+                }
+                window.open('https://www.google.co.jp/search?hl=ja&q='+encodeURI(text));
               }
-              window.open('https://www.google.co.jp/search?hl=ja&q='+encodeURI(text));
-              },false);
+              })(text),false);
             menu.appendChild(gg);
             
             hittest=true;
@@ -201,8 +207,8 @@
         if(hittest){
           menu.classList.add('show');
           var calcstyle=window.getComputedStyle(menu);
-          menu.style.left=Math.min(e.offsetX,canvas1.width-parseInt(calcstyle.width)-10)+"px";
-          menu.style.top=e.offsetY+"px";
+          menu.style.left=Math.max(Math.min(e.offsetX,parseInt(canvasStyle.width)-parseInt(calcstyle.width)-10),10)+"px";
+          menu.style.top=Math.max(10,Math.min(e.offsetY,parseInt(canvasStyle.height)-parseInt(calcstyle.height)-10))+"px";
           e.preventDefault();
         }else{
           if(menu.classList.contains('show')) {
@@ -225,8 +231,10 @@
         var id=SetVideoLocation();
 
         var video1=document.getElementsByTagName("video")[0];
-        UpdateLinkId(id);
-        MovieId=id;
+        if(id!="" && id!=null){
+          UpdateLinkId(id);
+          MovieId=id;
+        }
 
         var storage=localStorage;
         var vol=storage.getItem("niconico_volume");
@@ -261,9 +269,13 @@
         }
         else if(e.key=="Play" && video1.paused){video1.play();e.preventDefault();}
         else if((e.key=="Pause" || e.key=="MediaPause") && !video1.paused){video1.pause();e.preventDefault();}
-        else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){ToggleComment();e.preventDefault();}
+        else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){
+          if(video1.controls){ToggleComment();}else{ToggleUi();}
+          e.preventDefault();
+        }
         else if(e.keyCode==77 || e.key=="m"){video1.muted=!video1.muted;e.preventDefault();}
         else if(e.keyCode==70 || e.key=="f"){ToggleFullScreenStatus();e.preventDefault();}
+        else if(e.keyCode==86 || e.key=="v"){ToggleUi();e.preventDefault();}//動画を一時停止して観察する隠しモード
       }
       function PreparePictureInPicture(){
         var button=document.getElementById("toggle_pip");
@@ -291,8 +303,11 @@
       function ShowCurrentTime(){
         var video=document.getElementsByTagName("video")[0];
         var t = video.currentTime;
-        var tx = Math.floor(t/60)+":"+("00"+(Math.floor(t)%60)).slice(-2);
+        var tx = GetTimespanText(t);
         SetMessageCanvas(tx,1000);
+      }
+      function GetTimespanText(sec){
+        return (sec>=0?"":"-")+Math.floor(Math.abs(sec)/60)+":"+("00"+(Math.floor(Math.abs(sec))%60)).slice(-2);
       }
       function ShowVolume(){
         var video=document.getElementsByTagName("video")[0];
@@ -326,11 +341,13 @@
           event.preventDefault();
           if(MoveBaseTime==-1) {MoveBaseTime=video1.currentTime;}
           var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
-          SetMessage(GetSecond(currentCoord,OriginalCoord)+"秒移動");
+          var sec=GetSecond(currentCoord,OriginalCoord);
+          
+          SetMessageCanvas((sec>=0?"+":"")+GetTimespanText(sec)+" ("+GetTimespanText(MoveBaseTime+sec)+")",0);
         },false);
         video1.addEventListener('touchend', function(event) {
           var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
-          SetMessage("");
+          SetMessageCanvas("",0);
           var sec=GetSecond(currentCoord,OriginalCoord);
           if(Math.abs(sec)>0){
             video1.currentTime=MoveBaseTime+sec;
@@ -354,14 +371,11 @@
           }
       }
       function ResizeOnPause(){
-        SetControllerVisibility(true);
-        //if(FullScreenSetting==2){SetSizeFullFixed();}
-        //if(FullScreenSetting==3){SetSizeFullControlable();}
+        var video=document.getElementsByTagName("video")[0];
+        SetControllerVisibility(video.controls);
       }
       function ResizeOnPlay(){
         SetControllerVisibility(false);
-        //if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
-        //if(FullScreenSetting==3){SetSizeFull();}
       }
       function VolumeChange(from){
         var storage=localStorage;
@@ -421,8 +435,8 @@
         if(FullScreenSetting==1){FullScreenSetting++;}
 
         if(FullScreenSetting==0){SetMessageCanvas("標準サイズ",3000);}
-        else if(FullScreenSetting==1){SetMessageCanvas("最適(コントローラー常時表示)",3000);}
-        else if(FullScreenSetting==2){SetMessageCanvas("最適",3000);}
+        else if(FullScreenSetting==1){SetMessageCanvas("最適表示(コントローラー常時表示)",3000);}
+        else if(FullScreenSetting==2){SetMessageCanvas("最適表示",3000);}
         else if(FullScreenSetting==3){SetMessageCanvas("全体表示",3000);}
 
         ApplyFullScreenSetting();
@@ -497,6 +511,25 @@
       }
       function ApplyBackgroundSetting(){
         document.body.style.backgroundColor=Background;
+      }
+      function ToggleUi(){
+        var video=document.getElementsByTagName("video")[0];
+        var menu = document.getElementById("contextmenu");
+        
+        if(menu.classList.contains('show')) {
+          menu.classList.remove('show');
+        }
+        if(video.controls){
+          if(ShowComment){ToggleComment();}
+          video.controls=false;
+          video.pause();
+          SetMessageCanvas("UI非表示モード(vで切り替え)",1000);
+        }else{
+          ToggleComment();
+          video.controls=true;
+          video.play();
+        }
+        SetControllerVisibility(false);
       }
       function ToggleComment(){
         if(ShowComment){
@@ -584,15 +617,28 @@
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
           comment.lastDisplayed=0;
-          comment.text=comment.text.replace('\t','      ');//タブをスペースに置換。
+          comment.text=comment.text.replace('\t','     ');//タブをスペースに置換。
+          var commentLines=comment.text.split('\n');
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
 
-            var heightScale=1;
+            //enderの場合は基本コメントアートなのでオリジナルのフォントサイズを尊重(基本は小さめ)。
+            //文字サイズが小さめなのは、ニコニコ動画創設時より画面サイズが大きくなったため。
+            //参考:https://ch.nicovideo.jp/meg_nakagami/blomaga/ar218683
+            var isender=ContainsCommand(comment.mail,"ender");
+            var enderBase=canvas1.width/855;
+
+            var heightScale=isender?enderBase*(855.0/25.4)/height:1;
             if(comment.fontScale>0){heightScale=comment.fontScale;}
-            else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=0.6;}
-            else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=1.5;}
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=isender?enderBase*(855.0/38.0)/height:0.6;}
+            else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=isender?enderBase*(855.0/16.0)/height:1.5;}
+            if(height*commentLines.length*heightScale>canvas1.height){
+              r.y=0;
+            }
+            if(!isender){
+              heightScale=Math.min(heightScale,canvas1.height / (height*commentLines.length));
+            }
 
             if(comment.mail!=null && ContainsCommand(comment.mail,"mincho")){
               fontName='"ヒラギノ明朝 ProN W3", HiraMinProN-W3, "ヒラギノ明朝 ProN", HiraMinProN, "Hiragino Mincho ProN"'+','+'"游明朝体", "游明朝", "Yu Mincho", YuMincho, yumincho, YuMin-Medium'+','+"'serif'";
@@ -611,7 +657,7 @@
             var modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
             comment.width=-1;
-            for(var line of comment.text.split('\n'))
+            for(var line of commentLines)
               {comment.width=Math.max(context1.measureText(line).width,comment.width);}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
@@ -634,8 +680,9 @@
               }
               }
               comment.lastY=r.y/canvas1.width;
-              if(comment.width>canvas1.width){
-                heightScale*=canvas1.width/comment.width;
+              var commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              if(comment.width>commentWidth){
+                heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
                 var fsize=Math.max(height*heightScale,1);
                 heightScale=fsize/height;
                 context1.font=GetFontText(fsize,1,fontName,fontWeight);
@@ -643,7 +690,7 @@
                 r.x=canvas1.width/2.0 - comment.width/2.0;
               }
               if(!ContainsCommand(comment.mail,"ender")){
-                rangesUe.push(new range(r.y,comment.text.split('\n').length*height*heightScale));
+                rangesUe.push(new range(r.y,commentLines.length*height*heightScale));
               }
 
 //              r.y+=height*(heightScale-1);
@@ -652,7 +699,7 @@
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
-              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,(comment.text.split('\n').length-1.0)*height*heightScale);
+              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,(commentLines.length-1.0)*height*heightScale);
               if(ContainsCommand(comment.mail,"ender")){}else{
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
@@ -673,8 +720,9 @@
               }
               comment.lastY=r.y/canvas1.width;
 
-              if(comment.width>canvas1.width){
-                heightScale*=canvas1.width/comment.width;
+              var commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              if(comment.width>commentWidth){
+                heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
                 context1.font=GetFontText(height,heightScale,fontName,fontWeight);
                 comment.width=context1.measureText(comment.text).width;
                 r.x=canvas1.width/2.0 - comment.width/2.0;
@@ -683,7 +731,7 @@
 context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
 context1.stroke();
 */
-              var lineCnt=comment.text.split('\n').length;
+              var lineCnt=commentLines.length;
               if(!ContainsCommand(comment.mail,"ender")){
                 rangesShita.push(new range(r.y,lineCnt*height*heightScale));
                 //rangesShita.push(new range(r.y,height*heightScale));
@@ -724,15 +772,13 @@ context1.stroke();
             context1.shadowOffsetY=0;
             context1.shadowBlur=height*blurScale;
             
-            var lines=commenttext.split('\n');
-            
             comment.lastX=r.x/canvas1.width;
             comment.lastWidth=comment.width/canvas1.width;
-            comment.lastHeight=height*heightScale*lines.length/canvas1.width;
+            comment.lastHeight=height*heightScale*commentLines.length/canvas1.width;
             comment.lastDisplayed=1;
 
             var lineCnt=0;
-            for(var line of lines){
+            for(var line of commentLines){
               context1.fillText(line,r.x,r.y+height*heightScale*lineCnt);
               lineCnt++;
             }
