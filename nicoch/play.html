@@ -633,9 +633,6 @@
             if(comment.fontScale>0){heightScale=comment.fontScale;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=isender?enderBase*(855.0/38.0)/height:0.6;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=isender?enderBase*(855.0/16.0)/height:1.5;}
-            if(height*commentLines.length*heightScale>canvas1.height){
-              r.y=0;
-            }
             if(!isender){
               heightScale=Math.min(heightScale,canvas1.height / (height*commentLines.length));
             }
@@ -678,6 +675,9 @@
                   }
                 }
               }
+              if(height*commentLines.length*heightScale>canvas1.height){
+                r.y=0;
+              }
               }
               comment.lastY=r.y/canvas1.width;
               var commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
@@ -716,6 +716,9 @@
                     r.y=crtr.b;
                   }
                 }
+              }
+              if(height*commentLines.length*heightScale>canvas1.height){
+                r.y=0;
               }
               }
               comment.lastY=r.y/canvas1.width;
