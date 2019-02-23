@@ -93,11 +93,11 @@
     <script>
 //<![CDATA[
       function SetVideoLocation(){
-        var video1=document.getElementsByTagName("video")[0];
+        let video1=document.getElementsByTagName("video")[0];
         //IMPORTANT:
         //動画・コメントプロキシの設定はここを変更してください。
-        var hash=window.location.hash.split(":");
-        var id=hash[0].slice(1);
+        let hash=window.location.hash.split(":");
+        let id=hash[0].slice(1);
         //コメントプロキシ設定
         CommentSource="commentproxy.cgi?id="+id;
         if(hash[1]){
@@ -145,17 +145,17 @@
       };
       
       document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
-        var canvas1=document.getElementsByTagName("canvas")[0];
-        //var w=canvas1.width;
-        var canvasStyle=window.getComputedStyle(canvas1);
-        var w=parseInt(canvasStyle.width);
-        var menu = document.getElementById("contextmenu");
+        let canvas1=document.getElementsByTagName("canvas")[0];
+        //let w=canvas1.width;
+        let canvasStyle=window.getComputedStyle(canvas1);
+        let w=parseInt(canvasStyle.width);
+        let menu = document.getElementById("contextmenu");
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
         }
         while (menu.firstChild) menu.removeChild(menu.firstChild);
-        var hittest=false;
-        for(var i=0;i<Comments.length;i++){
+        let hittest=false;
+        for(let i=0;i<Comments.length;i++){
           let comment=Comments[i];
           if(comment.lastDisplayed && comment.lastX * w < e.offsetX && e.offsetX < comment.lastX * w + comment.lastWidth * w
             && comment.lastYReal * w < e.offsetY && e.offsetY < comment.lastYReal * w + comment.lastHeight * w
@@ -219,7 +219,7 @@
       },false);
       //document.body.addEventListener('click',function(){
       document.getElementsByTagName("video")[0].addEventListener('click',function(){
-        var menu = document.getElementById("contextmenu");
+        let menu = document.getElementById("contextmenu");
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
         }
@@ -229,21 +229,21 @@
       }
 
       function Init(){
-        var id=SetVideoLocation();
+        let id=SetVideoLocation();
 
-        var video1=document.getElementsByTagName("video")[0];
+        let video1=document.getElementsByTagName("video")[0];
         if(id!="" && id!=null){
           UpdateLinkId(id);
           MovieId=id;
         }
 
-        var storage=localStorage;
-        var vol=storage.getItem("niconico_volume");
+        let storage=localStorage;
+        let vol=storage.getItem("niconico_volume");
         if(vol){ video1.volume= vol;}
       }
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
-        var video1=document.getElementsByTagName("video")[0];
+        let video1=document.getElementsByTagName("video")[0];
         if(e.keyCode==37 || e.keyCode==227 || e.key=="ArrowLeft" || e.key=="Left"){
           video1.currentTime-=10;
           ShowCurrentTime();
@@ -279,12 +279,12 @@
         else if(e.keyCode==86 || e.key=="v"){ToggleUi();e.preventDefault();}//動画を一時停止して観察する隠しモード
       }
       function PreparePictureInPicture(){
-        var button=document.getElementById("toggle_pip");
+        let button=document.getElementById("toggle_pip");
         button.style.display=document.pictureInPictureEnabled?"inline-block":"none";
       }
       function TogglePictureInPicture(){
-        var button=document.getElementById("toggle_pip");
-        var video=document.getElementsByTagName("video")[0];
+        let button=document.getElementById("toggle_pip");
+        let video=document.getElementsByTagName("video")[0];
         if (!document.pictureInPictureElement) {
           video.requestPictureInPicture()
             .catch(error => {
@@ -302,16 +302,16 @@
         }
       }
       function ShowCurrentTime(){
-        var video=document.getElementsByTagName("video")[0];
-        var t = video.currentTime;
-        var tx = GetTimespanText(t);
+        let video=document.getElementsByTagName("video")[0];
+        let t = video.currentTime;
+        let tx = GetTimespanText(t);
         SetMessageCanvas(tx,1000);
       }
       function GetTimespanText(sec){
         return (sec>=0?"":"-")+Math.floor(Math.abs(sec)/60)+":"+("00"+(Math.floor(Math.abs(sec))%60)).slice(-2);
       }
       function ShowVolume(){
-        var video=document.getElementsByTagName("video")[0];
+        let video=document.getElementsByTagName("video")[0];
         SetMessageCanvas("音量: "+Math.round(video.volume*100)+"%",1000);
       }
       function ToggleFps(){
@@ -326,13 +326,13 @@
         CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
       }
       function SetFpsDisplay(){
-        var abutton=document.getElementById("toggle_fps");
+        let abutton=document.getElementById("toggle_fps");
         abutton.innerText=Fps+"Fps";
       }
       var MoveBaseTime=-1;
       function SetTouchEvent(){
-        var video1=document.getElementsByTagName("video")[0];
-        var target=document.body;
+        let video1=document.getElementsByTagName("video")[0];
+        let target=document.body;
         video1.addEventListener('touchstart', function(event) {
           /*video1.pause();*/
           if(MoveBaseTime==-1) {MoveBaseTime=video1.currentTime;}
@@ -341,15 +341,15 @@
         video1.addEventListener('touchmove', function(event) {
           event.preventDefault();
           if(MoveBaseTime==-1) {MoveBaseTime=video1.currentTime;}
-          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
-          var sec=GetSecond(currentCoord,OriginalCoord);
+          let currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          let sec=GetSecond(currentCoord,OriginalCoord);
           
           SetMessageCanvas((sec>=0?"+":"")+GetTimespanText(sec)+" ("+GetTimespanText(MoveBaseTime+sec)+")",0);
         },false);
         video1.addEventListener('touchend', function(event) {
-          var currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
+          let currentCoord=new Coord(event.changedTouches[0].pageX,event.changedTouches[0].pageY);
           SetMessageCanvas("",0);
-          var sec=GetSecond(currentCoord,OriginalCoord);
+          let sec=GetSecond(currentCoord,OriginalCoord);
           if(Math.abs(sec)>0){
             video1.currentTime=MoveBaseTime+sec;
           }
@@ -358,7 +358,7 @@
         },false);
       }
       function SetMessage(message){
-          var msgp=document.getElementById("message");
+          let msgp=document.getElementById("message");
           msgp.innerText=message;
           SetMessageCanvas(message,0);
       }
@@ -372,14 +372,14 @@
           }
       }
       function ResizeOnPause(){
-        var video=document.getElementsByTagName("video")[0];
+        let video=document.getElementsByTagName("video")[0];
         SetControllerVisibility(video.controls);
       }
       function ResizeOnPlay(){
         SetControllerVisibility(false);
       }
       function VolumeChange(from){
-        var storage=localStorage;
+        let storage=localStorage;
         storage.setItem("niconico_volume",from.volume);
       }
       function GetSecond(orgcoord,crtcoord){
@@ -397,7 +397,7 @@
         if(document.fullscreenElement == null){
           requestFullscreen();
           
-          var locker = screen.lockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
+          let locker = screen.lockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
           if (locker != null && screen.lockOrientationUniversal("landscape")) {
           }else if(screen.orientation.lock != null){
             screen.orientation.lock("landscape").then(function(){/* Locked */},function(/* Lock failed */){});
@@ -407,7 +407,7 @@
         }
       }
       function requestFullscreen() {
-        var target=document.body;
+        let target=document.body;
         if (target.webkitRequestFullscreen) {
           target.webkitRequestFullscreen();
         } else if (target.mozRequestFullScreen) {
@@ -449,22 +449,22 @@
         else{SetSizeDefault();}
       }
       function SetSizeFull(){
-        var w=window.innerWidth;
-        var h=window.innerHeight;
-        var hc=document.getElementById("controller").offsetHeight;
+        let w=window.innerWidth;
+        let h=window.innerHeight;
+        let hc=document.getElementById("controller").offsetHeight;
         //SetSize(w,h-hc);
         if(w/(16/9)+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
       }
       function SetSizeFullControlable(){
-        var w=window.innerWidth;
-        var h=window.innerHeight;
-        var hc=document.getElementById("controller").offsetHeight;
+        let w=window.innerWidth;
+        let h=window.innerHeight;
+        let hc=document.getElementById("controller").offsetHeight;
         SetSize(w,h-hc);
       }
       function SetSizeFullFixed(){
-        var w=window.innerWidth;
-        var h=window.innerWidth/(16/9);
-        var hc=document.getElementById("controller").offsetHeight;
+        let w=window.innerWidth;
+        let h=window.innerWidth/(16/9);
+        let hc=document.getElementById("controller").offsetHeight;
         if(h+hc>window.innerHeight){
           h=window.innerHeight-hc;
           w=h*(16/9);
@@ -472,9 +472,9 @@
         SetSize(w,h);
       }
       function SetSizeFullFixedUncontorolable(){
-        var w=window.innerWidth;
-        var h=window.innerWidth/(16/9);
-        var hc=document.getElementById("controller").offsetHeight;
+        let w=window.innerWidth;
+        let h=window.innerWidth/(16/9);
+        let hc=document.getElementById("controller").offsetHeight;
         if(h>window.innerHeight){
           h=window.innerHeight;
           w=h*(16/9);
@@ -482,14 +482,14 @@
         SetSize(w,h);
       }
       function SetSizeDefault(){
-        var w=Math.min(window.innerWidth,855);
+        let w=Math.min(window.innerWidth,855);
         SetSize(w,w/855.0*481.0);
       }
       function SetSize(width,height){
-        var videoDiv1= document.getElementById("VideoPlayer");
-        var controler1= document.getElementById("controller");
-        var canvas1=document.getElementsByTagName("canvas")[0];
-        var video1=document.getElementsByTagName("video")[0];
+        let videoDiv1= document.getElementById("VideoPlayer");
+        let controler1= document.getElementById("controller");
+        let canvas1=document.getElementsByTagName("canvas")[0];
+        let video1=document.getElementsByTagName("video")[0];
 
         videoDiv1.style.width=width+"px";
         canvas1.style.width=width+"px";
@@ -514,8 +514,8 @@
         document.body.style.backgroundColor=Background;
       }
       function ToggleUi(){
-        var video=document.getElementsByTagName("video")[0];
-        var menu = document.getElementById("contextmenu");
+        let video=document.getElementsByTagName("video")[0];
+        let menu = document.getElementById("contextmenu");
         
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
@@ -538,8 +538,8 @@
 
           //document.getElementById("toggle_comment").innerText="コメントオフ";
           document.getElementById("toggle_comment").style.opacity=0.5;
-          var canvas1=document.getElementsByTagName("canvas")[0];
-          var context1=canvas1.getContext('2d');
+          let canvas1=document.getElementsByTagName("canvas")[0];
+          let context1=canvas1.getContext('2d');
           context1.clearRect(0,0,canvas1.width,canvas1.height);
         }
         else{
@@ -552,13 +552,13 @@
         localStorage.setItem("niconico_comment_enabled",ShowComment);
       }
       function UpdateLinkId(id){
-        var link=document.getElementById("nicovideo_link");
+        let link=document.getElementById("nicovideo_link");
         link.setAttribute("href", "https://www.nicovideo.jp/watch/"+id);
         link.style.display="inline-block";
       }
       function OpenInNicovideo(){
         if(MovieId){
-          var video=document.getElementsByTagName("video")[0];
+          let video=document.getElementsByTagName("video")[0];
           window.location.href = "http://www.nicovideo.jp/watch/"+MovieId+"?from="+Math.floor(video.currentTime);
           return true;
         }
@@ -566,8 +566,7 @@
       }
       function CheckRanges(ranges,range){
         if(!ranges){return true;}
-        for(var key in ranges){
-          var tr=ranges[key];
+        for(let tr of ranges){
           if(tr.a<=range.b && range.a<tr.b){return false;}
         }
         return true;
@@ -576,23 +575,23 @@
         return Math.min(vpos,duration*100-cmDuration*0.5);
       }
       function DrawComment(){
-        var canvas1=document.getElementsByTagName("canvas")[0];
-        var video1=document.getElementsByTagName("video")[0];
-        var context1=canvas1.getContext('2d');
+        let canvas1=document.getElementsByTagName("canvas")[0];
+        let video1=document.getElementsByTagName("video")[0];
+        let context1=canvas1.getContext('2d');
         context1.clearRect(0,0,canvas1.width,canvas1.height);
 
-        var height=canvas1.width/855*30;
-        var time=video1.currentTime;
-        var fontWeight=600;
-        var fontName="";
+        let height=canvas1.width/855*30;
+        let time=video1.currentTime;
+        let fontWeight=600;
+        let fontName="";
 
-        var blurScale=0.3;
+        let blurScale=0.3;
 
         if(CanvasMessage!="" && (CanvasMessageDeadline==0 || CanvasMessageDeadline>=(new Date()).getTime())){
           fontName='"ヒラギノ角ゴ ProN W6", HiraKakuProN-W6, "ヒラギノ角ゴ ProN", HiraKakuProN, "Hiragino Kaku Gothic ProN"'+','+'"ＭＳ Ｐゴシック", "MS PGothic", MSPGothic, MS-PGothic'+',Arial';
           context1.font=GetFontText(height,2,fontName,fontWeight);
 
-          var mesWidth=context1.measureText(CanvasMessage).width;
+          let mesWidth=context1.measureText(CanvasMessage).width;
 
           context1.textBaseline="middle";
           context1.fillStyle="#ffffff";
@@ -609,28 +608,28 @@
 
         context1.font=GetFontText(height,1,fontName,fontWeight);
 
-        var range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
-        var rangesUe=[];
-        var rangesShita=[];
+        let range=function(a,w){this.a=a;this.b=a+w;this.w=w;}
+        let rangesUe=[];
+        let rangesShita=[];
 	        
-        var cmDuration=CommentDuration;
-        var operatedComments=[];
-        for(var i=0;i<Comments.length;i++){
-          var comment=Comments[i];
+        let cmDuration=CommentDuration;
+        let operatedComments=[];
+        for(let i=0;i<Comments.length;i++){
+          let comment=Comments[i];
           comment.lastDisplayed=0;
-          var commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'     ');
-          var commentLines=commentText.split('\n');
-          var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
+          let commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'     ');
+          let commentLines=commentText.split('\n');
+          let cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
 
             //enderの場合は基本コメントアートなのでオリジナルのフォントサイズを尊重(基本は小さめ)。
             //文字サイズが小さめなのは、ニコニコ動画創設時より画面サイズが大きくなったため。
             //参考:https://ch.nicovideo.jp/meg_nakagami/blomaga/ar218683
-            var isender=ContainsCommand(comment.mail,"ender");
-            var enderBase=canvas1.width/855;
+            let isender=ContainsCommand(comment.mail,"ender");
+            let enderBase=canvas1.width/855;
 
-            var heightScale=isender?enderBase*(855.0/25.4)/height:1;
+            let heightScale=isender?enderBase*(855.0/25.4)/height:1;
             if(comment.fontScale>0){heightScale=comment.fontScale;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"small")){heightScale=isender?enderBase*(855.0/38.0)/height:0.6;}
             else if(comment.mail!=null && ContainsCommand(comment.mail,"big")){heightScale=isender?enderBase*(855.0/16.0)/height:1.5;}
@@ -651,11 +650,11 @@
 
             context1.font=GetFontText(height,heightScale,fontName,fontWeight);
             r=new Coordinate(0,0);
-            var overflow=false;
-            var modnum=(canvas1.height-height+1);
+            let overflow=false;
+            let modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
             comment.width=-1;
-            for(var line of commentLines)
+            for(let line of commentLines)
               {comment.width=Math.max(context1.measureText(line).width,comment.width);}
             if(comment.mail!=null && ContainsCommand(comment.mail,"ue")){
               r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
@@ -663,14 +662,13 @@
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
-              var changed=false;
+              let changed=false;
               while(! CheckRanges(rangesUe,new range(r.y,height*heightScale))){
                 r.y+=height*heightScale;
                 changed=true;
               }
               if(changed){
-                for(var key in rangesUe){
-                  var crtr=rangesUe[key];
+                for(let ctrr of rangesUe){
                   if(crtr.b<r.y && CheckRanges(rangesUe,new range(crtr.b,height*heightScale))){
                     r.y=crtr.b;
                   }
@@ -681,10 +679,10 @@
               }
               }
               comment.lastY=r.y/canvas1.width;
-              var commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
               if(comment.width>commentWidth){
                 heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
-                var fsize=Math.max(height*heightScale,1);
+                let fsize=Math.max(height*heightScale,1);
                 heightScale=fsize/height;
                 context1.font=GetFontText(fsize,1,fontName,fontWeight);
                 comment.width=context1.measureText(comment.text).width;
@@ -705,14 +703,13 @@
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
               }
-              var changed=false;
+              let changed=false;
               while(! CheckRanges(rangesShita,new range(r.y,height*heightScale))){
                 r.y+=height*heightScale;
                 changed=true;
               }
               if(changed){
-                for(var key in rangesShita){
-                  var crtr=rangesShita[key];
+                for(let crtr of rangesShita){
                   if(crtr.b<r.y && CheckRanges(rangesShita,new range(crtr.b,height*heightScale))){
                     r.y=crtr.b;
                   }
@@ -724,7 +721,7 @@
               }
               comment.lastY=r.y/canvas1.width;
 
-              var commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
               if(comment.width>commentWidth){
                 heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
                 context1.font=GetFontText(height,heightScale,fontName,fontWeight);
@@ -735,7 +732,7 @@
 context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
 context1.stroke();
 */
-              var lineCnt=commentLines.length;
+              let lineCnt=commentLines.length;
               if(!ContainsCommand(comment.mail,"ender")){
                 rangesShita.push(new range(r.y,lineCnt*height*heightScale));
                 //rangesShita.push(new range(r.y,height*heightScale));
@@ -747,7 +744,7 @@ context1.stroke();
 
               context1.textBaseline="bottom";
             }else{
-              var r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
+              r=GetFromOperated(operatedComments,comment,video1.duration,cmDuration,time,canvas1.width,height,context1);
               comment.lastY=r.y/canvas1.width;
 //              r.y+=height*(heightScale-1)/2.0;
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
@@ -762,9 +759,9 @@ context1.stroke();
 
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなので\u29F5(REVERSE SOLIDUS OPERATOR)で代替
-            //var commenttext=comment.text;
+            //let commenttext=comment.text;
             context1.globalAlpha=overflow?0.7:1.0;
-            var fillColor=GetColorFromMail(comment.mail);
+            let fillColor=GetColorFromMail(comment.mail);
             context1.fillStyle=fillColor;
             if(!overflow){
               context1.shadowColor= fillColor=="#000000" ? "#ffffff" : "#000000";
@@ -780,8 +777,8 @@ context1.stroke();
             comment.lastHeight=height*heightScale*commentLines.length/canvas1.width;
             comment.lastDisplayed=1;
 
-            var lineCnt=0;
-            for(var line of commentLines){
+            let lineCnt=0;
+            for(let line of commentLines){
               context1.fillText(line,r.x,r.y+height*heightScale*lineCnt);
               lineCnt++;
             }
@@ -793,17 +790,17 @@ context1.stroke();
         return fontWeight+" "+(height*heightScale)+"px "+fontName;
       }
       function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight,testContext){
-        var cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
+        let cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
  //       if(comment.lastY>=0){return new Coordinate(GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration),comment.lastY*canvasWidth);}
-        var ry=Math.max(0,comment.lastY*canvasWidth);
-        var firstCollision=true;
-        for(var i=0;i<operatedComments.length;i++){
-          var opCom=operatedComments[i];
-          var cvpos2=GetActualVpos(opCom.vpos,videoDuration,cmDuration);
-          var a=GetCommentX(cvpos,cvpos2+cmDuration,comment.width,canvasWidth,cmDuration);
-          var b=GetCommentX(cvpos2,cvpos,opCom.width,canvasWidth,cmDuration) + opCom.width;
-          var c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
-          var d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
+        let ry=Math.max(0,comment.lastY*canvasWidth);
+        let firstCollision=true;
+        for(let i=0;i<operatedComments.length;i++){
+          let opCom=operatedComments[i];
+          let cvpos2=GetActualVpos(opCom.vpos,videoDuration,cmDuration);
+          let a=GetCommentX(cvpos,cvpos2+cmDuration,comment.width,canvasWidth,cmDuration);
+          let b=GetCommentX(cvpos2,cvpos,opCom.width,canvasWidth,cmDuration) + opCom.width;
+          let c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
+          let d=GetCommentX(cvpos,cvpos2,comment.width,canvasWidth,cmDuration) + comment.width;
           if(
             CheckY(fontHeight,ry,opCom.lastY*canvasWidth,comment.text.split('\n').length,opCom.text.split('\n').length) &&
                 (! ( ( (b<canvasWidth) && (0<a) && (cvpos2<=cvpos) ) || ( (c<canvasWidth) && (0<d) && (cvpos<cvpos2) ) ) )
@@ -814,7 +811,7 @@ context1.stroke();
             else{ry+=fontHeight;}
           }
         }
-      var rx=GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration);
+        let rx=GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration);
 //debug
 /*
 if(!firstCollision){
@@ -830,8 +827,8 @@ testContext.stroke();
 
       function ContainsCommand(mail,key){
         if(mail==null || mail==""){return false;}
-        var mails=mail.split(" ");
-        for(var i=0;i<mails.length;i++){
+        let mails=mail.split(" ");
+        for(let i=0;i<mails.length;i++){
           if(mails[i]==key){return true;}
         }
         return false;
@@ -861,9 +858,9 @@ testContext.stroke();
         if(ContainsCommand(mail,"black2")){return "#666666";}
         
         if(mail==null || mail==""){return false;}
-        var reg=new RegExp(/#[0-9A-fA-F]{6}/);
-        var mails=mail.split(" ");
-        for(var i=0;i<mails.length;i++){
+        let reg=new RegExp(/#[0-9A-fA-F]{6}/);
+        let mails=mail.split(" ");
+        for(let i=0;i<mails.length;i++){
           if(reg.test(mails[i])){return mails[i];}
         }
 
@@ -874,12 +871,12 @@ testContext.stroke();
         return y1-fontHeight*(lineCnt2-0.5) < y2 && y2-fontHeight*(lineCnt1-0.5) < y1;
       }
       function ParseComment(xml){
-        var result=[];
-        var parser = new DOMParser();
-        var dom=parser.parseFromString(xml, 'text/xml');
-        var chats=dom.getElementsByTagName("chat");
-        for(var i=0 ; i < chats.length;i++){
-          var chat=function(text,vpos,mail,cnt){
+        let result=[];
+        let parser = new DOMParser();
+        let dom=parser.parseFromString(xml, 'text/xml');
+        let chats=dom.getElementsByTagName("chat");
+        for(let i=0 ; i < chats.length;i++){
+          let chat=function(text,vpos,mail,cnt){
             this.text=text;
             this.vpos=vpos;
             if(mail!=null){
@@ -899,8 +896,8 @@ testContext.stroke();
             this.lastDisplayed=0;
             this.lastHeight=-1;
           }
-          var chatT=chats[i];
-          var atdeleted=chats[i].getAttribute("deleted");
+          let chatT=chats[i];
+          let atdeleted=chats[i].getAttribute("deleted");
           if(atdeleted==0 || atdeleted==null){
             result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail"),i));
           }
@@ -912,7 +909,7 @@ testContext.stroke();
         return result;
       }
       function GetChatXML(callback){
-        var req = new XMLHttpRequest();
+        let req = new XMLHttpRequest();
         req.onreadystatechange = function() {
           if (req.readyState == 4) {
             if (req.status == 200) {
