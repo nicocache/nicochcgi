@@ -7,8 +7,9 @@
     <title>ニコニコ動画プレイヤー</title>
     <style type="text/css">
       a.button{display: inline-block;padding: 0.3em 1em;text-decoration: none;color: #FFF; vertical-align: middle;}
-      a.button_full{display: inline-block;padding: 0.7em 0.7em;text-decoration: none;
-        color:rgba(255,255,255,0.5);background:rgba(0,0,0,0.0);border:0.1vw solid rgba(127,127,127,0.3);font-size:10vw;}
+      a.button_full{display: inline-block;padding: 0.7em 0.7em;
+        text-decoration: none;
+        color:rgba(255,255,255,0.1);background:rgba(0,0,0,0.0);border:0.1vw solid rgba(127,127,127,0.3);font-size:10vw;}
       #contextmenu{display: none;color:white;position:absolute;z-index:5;top:0;left:0;background-color:black;border:1px solid #888;margin:0;
         text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
       #contextmenu p.title{margin:0.3em;margin-bottom:0;font-weight: bold;}
@@ -155,26 +156,26 @@
         while (menu.firstChild) menu.removeChild(menu.firstChild);
         var hittest=false;
         for(var i=0;i<Comments.length;i++){
-          var comment=Comments[i];
+          let comment=Comments[i];
           if(comment.lastDisplayed && comment.lastX * w < e.offsetX && e.offsetX < comment.lastX * w + comment.lastWidth * w
             && comment.lastYReal * w < e.offsetY && e.offsetY < comment.lastYReal * w + comment.lastHeight * w
             ){
             
-            var text=comment.text;
+            let text=comment.text;
             
-            var p = document.createElement('p');
+            let p = document.createElement('p');
             p.innerText=text.replace(/\n/g, '↵');
             p.classList.add('title');
             menu.appendChild(p);
             
             if(comment.mail!=null && comment.mail != ""){
-              var m = document.createElement('p');
+              let m = document.createElement('p');
               m.innerText=""+comment.mail;
               m.classList.add('menu');
               menu.appendChild(m);
             }
             
-            var a = document.createElement('p');
+            let a = document.createElement('p');
             a.innerText="コメントをコピー";
             a.classList.add('menu');
             a.addEventListener("click", (function(p){
@@ -188,7 +189,7 @@
               })(p),false);
             menu.appendChild(a);
             
-            var gg = document.createElement('p');
+            let gg = document.createElement('p');
             gg.classList.add('menu');
             gg.innerText="コメントで検索";
             gg.addEventListener("click", (function(text){
@@ -206,7 +207,7 @@
         }
         if(hittest){
           menu.classList.add('show');
-          var calcstyle=window.getComputedStyle(menu);
+          let calcstyle=window.getComputedStyle(menu);
           menu.style.left=Math.max(Math.min(e.offsetX,parseInt(canvasStyle.width)-parseInt(calcstyle.width)-10),10)+"px";
           menu.style.top=Math.max(10,Math.min(e.offsetY,parseInt(canvasStyle.height)-parseInt(calcstyle.height)-10))+"px";
           e.preventDefault();
@@ -617,8 +618,8 @@
         for(var i=0;i<Comments.length;i++){
           var comment=Comments[i];
           comment.lastDisplayed=0;
-          comment.text=comment.text.replace('\t','     ');//タブをスペースに置換。
-          var commentLines=comment.text.split('\n');
+          var commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'     ');
+          var commentLines=commentText.split('\n');
           var cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
           if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
@@ -761,7 +762,6 @@ context1.stroke();
 
             // コメントでバックスラッシュを意図しているが、円マークで表示される事があるので対策。
             // フォント切り替えなしでは全角しかないようなので\u29F5(REVERSE SOLIDUS OPERATOR)で代替
-            var commenttext=comment.text.replace("\\","\u29F5");
             //var commenttext=comment.text;
             context1.globalAlpha=overflow?0.7:1.0;
             var fillColor=GetColorFromMail(comment.mail);
