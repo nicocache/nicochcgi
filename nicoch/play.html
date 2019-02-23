@@ -92,6 +92,8 @@
     </div>
     <script>
 //<![CDATA[
+      'use strict';
+
       function SetVideoLocation(){
         let video1=document.getElementsByTagName("video")[0];
         //IMPORTANT:
@@ -101,7 +103,7 @@
         //コメントプロキシ設定
         CommentSource="commentproxy.cgi?id="+id;
         if(hash[1]){
-          ChannelId=hash[1];
+          let ChannelId=hash[1];
           //動画アドレス設定
           video1.src="movie.cgi?c="+ChannelId+"&v="+id;
         }else{
@@ -123,6 +125,7 @@
       var ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
       var FullScreenSetting=2;
       var Comments="";
+      var Background;
 
       window.onload = function() {
         Init();
@@ -649,7 +652,7 @@
             }
 
             context1.font=GetFontText(height,heightScale,fontName,fontWeight);
-            r=new Coordinate(0,0);
+            let r=new Coordinate(0,0);
             let overflow=false;
             let modnum=(canvas1.height-height+1);
 //            if(comment.width<0)
