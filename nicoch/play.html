@@ -397,7 +397,7 @@
         }
       }
       function ToggleFullScreenStatus(){
-        if(document.fullscreenElement == null && document.webkitFullscreenElement == null){
+        if(document.fullscreenElement == null && document.webkitFullscreenElement == null && document.mozFullScreenElement == null && document.msFullscreenElement == null){
           requestFullscreen();
           
           screen.lockOrientationUniversal = screen.lockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
