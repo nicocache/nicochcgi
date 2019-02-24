@@ -39,6 +39,14 @@ password your_pass
 [デモ](https://nicocache.github.io/play.html#0)  
 最新版とは限りません。静的サイト版。
 
+## 関連アプリ
+### [UWP版クライアント](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
+Windowsで利用できるUWP版のクライアントがあります。
+ただし、コメントの表示には対応していません。
+
+* [ストア](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
+* [プロジェクトページ](https://github.com/kurema/NicochViewerUWP)
+
 ## ToDo
 1. ~~複数行コメントに対応。ただ本家よりこっちの表示の方が気に入っているので再現性は追及しません。基本このまま。~~ 仮対応しました。
 2. ~~アカウント対応。必要性は微妙。~~ 対応しません。
