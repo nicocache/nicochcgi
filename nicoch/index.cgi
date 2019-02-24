@@ -61,7 +61,7 @@ foreach my $dir (@dirs){
       my ($watchid,$title) = $file =~ m!/([^\./]+)\.(.+)\.[^\.]+$!;
       next if $watchid == "tmp";
       print "<a href='play.html\#$watchid\:$chid'>$title</a>";
-      print "(<a href='http://www.nicovideo.jp/watch/$watchid'>org</a>)<br />\n";
+      print "(<a href='https://www.nicovideo.jp/watch/$watchid'>org</a>)<br />\n";
     }
     print "</div>\n";
     print "</div>\n";
@@ -73,12 +73,12 @@ print "<h1>録画予約</h1>\n";
 print <<"FORM";
 <div class="form_add">
 <form action="modify.cgi" method="post">
-<input type="input" name="a1" value="http://ch.nicovideo.jp/..." />
+<input type="input" name="a1" value="https://ch.nicovideo.jp/..." />
 <input type="hidden" name="op" value="add" />
 <input type="submit" value="追加" />
 </form>
 <br />
-<a href="http://ch.nicovideo.jp">ニコニコチャンネル</a>
+<a href="https://ch.nicovideo.jp">ニコニコチャンネル</a>
 <a href="editor.cgi">一括編集</a>
 <a href="tv.html">テレビ向けUI</a>
 </div>

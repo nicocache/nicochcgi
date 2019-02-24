@@ -34,12 +34,12 @@
     <h1>録画予約</h1>
     <div class="form_add">
       <form action="modify.cgi" method="post">
-        <input type="input" name="a1" value="http://ch.nicovideo.jp/..." />
+        <input type="input" name="a1" value="https://ch.nicovideo.jp/..." />
         <input type="hidden" name="op" value="add" />
         <input type="submit" value="追加" />
       </form>
       <br />
-      <a href="http://ch.nicovideo.jp">ニコニコチャンネル</a>
+      <a href="https://ch.nicovideo.jp">ニコニコチャンネル</a>
       <a href="editor.cgi">一括編集</a>
       <a href="tv.html">テレビ向けUI</a>
     </div>
@@ -79,7 +79,7 @@ function ShowChannelsRecorded(){
 function AppendChannelBoxRecorded(container,item){
   var div=document.createElement("div");
   div.setAttribute("class","channel_box");
-  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
+  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
   AppendVideoGroup(div,item);
   container.appendChild(div);
   return div;
@@ -94,7 +94,7 @@ function ScrollInto(item){
 
 function OpenVideo(movie_id,channel_id){
   localStorage.setItem("niconico_last_played_channel",channel_id);
-  window.location.href = "http://www.nicovideo.jp/watch/"+video_id;
+  window.location.href = "https://www.nicovideo.jp/watch/"+video_id;
   return false;
 }
 
@@ -112,7 +112,7 @@ function ShowChannelsRecording(){
 function AppendChannelBoxRecording(container,item){
   var div=document.createElement("div");
   div.setAttribute("class","channel_box");
-  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='http://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"
+  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"
     +"<form action='modify.cgi' method='post'><input type='hidden' name='a1' value='https://ch.nicovideo.jp/"+item["channel_id"]+"' /><input type='hidden' name='op' value='del' /><input class='delete' type='submit' value='削除' /></form>";
   container.appendChild(div);
 }
@@ -124,7 +124,7 @@ function AppendVideoGroup(container,item){
   var videos=item.videos;
   for(var key in videos){
     var video=videos[key];
-    html+="<a href='"+video.player_url+"' onclick='OpenVideo(\""+video.id+"\",\""+item.channel_id+"\")'>"+video.title+"</a>(<a href='http://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
+    html+="<a href='"+video.player_url+"' onclick='OpenVideo(\""+video.id+"\",\""+item.channel_id+"\")'>"+video.title+"</a>(<a href='https://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
   }
   div.innerHTML=html;
   container.appendChild(div);

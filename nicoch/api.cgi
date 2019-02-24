@@ -17,11 +17,13 @@ my @dirs=glob $conf{"dlhome"}."/*";
 
 my $cnt1=0;
 foreach my $dir (@dirs){
-  if($cnt1>0){print ",\n";}
-  $cnt1++;
-  print "    {\n";
   if(-d $dir){
+    if($cnt1>0){print ",\n";}
+    $cnt1++;
+    print "    {\n";
     my ($chid)= $dir =~ m!/([^/]+/?$)!;
+#next line is for compatibility...
+    print "      \"channel_id\":\"$chid\",\n";
     print "      \"channnel_id\":\"$chid\",\n";
     print "      \"videos\":[\n";
 
@@ -43,8 +45,8 @@ foreach my $dir (@dirs){
       print "        }";
     }
     print "\n      ]";
+    print "\n    }";
   }
-  print "\n    }";
 }
 print "\n  ],";
 
