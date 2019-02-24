@@ -1,11 +1,11 @@
 # nicochcgi
 ニコニコチャンネルの自動キャッシュサーバー
 
-## about
+## About
 ニコニコチャンネルを監視して、ダウンロードするツールです。  
-ダウンロードスクリプトに管理用のcgi。
+ダウンロードスクリプトに管理用のcgi、API、プレイヤー、テレビ向けUI等含めます。
 
-## demonstration
+## Demonstration
 * [メインページ](https://nicocache.github.io/nicoch/)
 * [TV向けUI](https://nicocache.github.io/nicoch/tv.html)
 * [動画プレイヤー](https://nicocache.github.io/play.html#0)  
@@ -18,20 +18,19 @@
 ```git clone https://github.com/nicocache/nicochcgi.git```とか。
 2. ユーザーを書き換えます。```sudo chown www-data:www-data *```とか。```chlist.*```の3ファイルはcgiが書き換えるので必須です。
 3. ```.htaccess```を書き換えます。間違えて外部からアクセスされると犯罪になりかねません。```.htaccess```が有効になるように設定するのも忘れないでください。
-4. cgiに実行権限を付与します。```sudo chmod 755 *.cgi *.pl```とかです。
+4. cgiに実行権限を付与します。```sudo chmod 755 *.cgi *.pl```。
 5. cgiが実行できるようにいろんな設定をします。
 6. cpanを使って依存ライブラリをインストールします。
 7. ```nicoch.conf```を書き換えてダウンロードフォルダを設定します。フォルダはhttpの公開フォルダ外で構いません。ただしcgiが読める場所で。
-8. ```.netrc```にニコニコ動画のアカウントを登録します。パスワードを分けた別アカウントを作っておいた方が楽だと思います。.netrcは```chmod 600 .netrc```と```chown ユーザー名 .netrc```でアクセス権を変更してください。
+8. ```/var/www-data/.netrc```にニコニコ動画のアカウントを登録します。パスワードを分けた別アカウントを作っておいた方が楽だと思います。.netrcは```chmod 600 .netrc```と```chown www-data:www-data .netrc```でアクセス権を変更してください。
 ```
 machine nicovideo
 login foo@bar.com
 password your_pass
 ```
-9. /var/www-data/.netrcにも同様に登録します。これは```commentproxy.pl```で使われます。なおこちらのみで、crontabをwww-dataに設定しても構いません。([参照](https://askubuntu.com/questions/189189/how-to-run-crontab-as-userwww-data))
-10. 自動ダウンロードを設定します。```sudo -u www-data crontab -e```で```10 3 * * *  perl /var/www/html/nicoch/nico-anime.pl  2>&1 | tee -a ~/nicoch.log ```とか。エコノミーユーザーの場合は低画質の時間は避けましょう。そうでなくてもサーバー負荷を分散するようにするべきです。
-11. サムネイル作成用にダウンロードフォルダに``script/mkthumb.sh``を配置し同様にcrontabを設定します。サムネイルはサードパーティーアプリとテレビ向けUI(tv.html)用なので不要ならば必要ありません。
-12. ブラウザでアクセスしてみて適当にチャンネルを登録します。
+9. 自動ダウンロードを設定します。```sudo -u www-data crontab -e```で```10 3 * * *  perl /var/www/html/nicoch/nico-anime.pl  2>&1 | tee -a ~/nicoch.log ```とか。エコノミーユーザーの場合は低画質の時間は避けましょう。そうでなくてもサーバー負荷を分散するようにするべきです。
+10. サムネイル作成用にダウンロードフォルダに``script/mkthumb.sh``を配置し同様にcrontabを設定します。サムネイルはサードパーティーアプリとテレビ向けUI(tv.html)用なので不要ならば必要ありません。
+11. ブラウザでアクセスしてみて適当にチャンネルを登録します。
 
 ## How to update
 アップデート方法
