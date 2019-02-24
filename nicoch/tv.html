@@ -216,7 +216,7 @@ function SelectionMove(direction){
 }
 
 function SelectionClear(){
-  if(SelectedItem.classList.contains("selected")){
+  if(SelectedItem != null && SelectedItem.classList.contains("selected")){
     SelectedItem.classList.remove("selected");
   }
 }
@@ -315,7 +315,7 @@ function ShowChannelsRecorded(lastChannel){
   var parentCount=SelectedParent==null?-1:SelectedParent.getAttribute("item_count");
 
   var showVideoTarget=null;
- 
+
   for(var item in recorded){
     if(recorded[item].videos.length==0){
       continue;
@@ -357,6 +357,7 @@ function ShowChannelsRecorded(lastChannel){
     ShowVideosRecorded(showVideoTarget,SelectedCount);
     SelectedParent=showVideoTarget;
   }
+  if(SelectedItem==null){SelectItem(0,0);}
 }
 
 function AppendChannelBoxRowContainer(container,row_count){

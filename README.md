@@ -5,7 +5,14 @@
 ニコニコチャンネルを監視して、ダウンロードするツールです。  
 ダウンロードスクリプトに管理用のcgi。
 
-## Hot to use
+## demonstration
+* [メインページ](https://nicocache.github.io/nicoch/)
+* [TV向けUI](https://nicocache.github.io/nicoch/tv.html)
+* [動画プレイヤー](https://nicocache.github.io/play.html#0)  
+
+最新版とは限りません。静的サイト版。
+
+## How to use
 インストール方法
 1. nicochフォルダをApacheの公開フォルダ(/var/www/html/nicoch/とか)にコピーします。  
 ```git clone https://github.com/nicocache/nicochcgi.git```とか。
@@ -47,10 +54,6 @@ password your_pass
 2. コメント取得はサーバー側でプロキシを建てています。動画のやコメントプロキシのUrl指定部分は書き換えてください。
 3. コメント表示の挙動がいくらか異なります。簡易版と考えてください。またちょっと重いです。
 4. フォントサイズは基本的に実際より小さめにしています。現在としては公式のサイズは大きめだと個人的に思います。
-
-### demo
-[デモ](https://nicocache.github.io/play.html#0)  
-最新版とは限りません。静的サイト版。
 
 ## Apps
 ### [UWP版クライアント](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
