@@ -6,6 +6,7 @@
 ダウンロードスクリプトに管理用のcgi。
 
 ## Hot to use
+インストール方法
 1. nicochフォルダをApacheの公開フォルダ(/var/www/html/nicoch/とか)にコピーします。  
 ```git clone https://github.com/nicocache/nicochcgi.git```とか。
 2. ユーザーを書き換えます。```sudo chown www-data:www-data *```とか。```chlist.*```の3ファイルはcgiが書き換えるので必須です。
@@ -25,6 +26,18 @@ password your_pass
 11. サムネイル作成用にダウンロードフォルダに``script/mkthumb.sh``を配置し同様にcrontabを設定します。サムネイルはサードパーティーアプリとテレビ向けUI(tv.html)用なので不要ならば必要ありません。
 12. ブラウザでアクセスしてみて適当にチャンネルを登録します。
 
+## How to update
+アップデート方法
+1. サーバーの/nicochフォルダを適当な場所にバックアップします。
+2. GitHub上の/nicoch内の以下以外のファイルをコピーします。
+  * chlist.txt
+  * chlist.bup
+  * chlist.tmp
+  * nicoch.conf
+  * .htaccess
+3. 以前のバージョンでは.htaccessでindex.cgiを最優先にしていました。必要ならindex.htmlに書き換えてください。
+4. cgiに実行権限を付与。
+
 ## play.html
 簡単なニコニコ動画のhtmlプレイヤーが含まれています(play.html)。  
 同様のニコニコ動画キャッシュサーバーを作る際には手軽なのでお勧めです。
@@ -39,7 +52,7 @@ password your_pass
 [デモ](https://nicocache.github.io/play.html#0)  
 最新版とは限りません。静的サイト版。
 
-## 関連アプリ
+## Apps
 ### [UWP版クライアント](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
 Windowsで利用できるUWP版のクライアントがあります。
 ただし、コメントの表示には対応していません。
