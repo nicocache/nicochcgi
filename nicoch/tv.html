@@ -287,7 +287,7 @@ function AppendVideoBoxRecorded(container,item,row_count,column_count,item_count
   div.setAttribute("column",column_count);
   div.setAttribute("item_count",item_count);
   div.setAttribute("player_url",item.player_url);
-  div.innerHTML="<img src='"+item.thumbnail_url+"' /><div class='box_info'><p class='title'>"+item.title+"</p><p class='detail'><a href='http://www.nicovideo.jp/watch/"+item.id+"'>"+item.id+"</a></p></div>";
+  div.innerHTML="<img src='"+item.thumbnail_url+"' onerror='SetNoImage(this);' /><div class='box_info'><p class='title'>"+item.title+"</p><p class='detail'><a href='http://www.nicovideo.jp/watch/"+item.id+"'>"+item.id+"</a></p></div>";
 
   div.addEventListener("click",function() {
     OpenVideo(div);
@@ -295,6 +295,10 @@ function AppendVideoBoxRecorded(container,item,row_count,column_count,item_count
 
   container.appendChild(div);
   return div;
+}
+
+function SetNoImage(item){
+  item.src="noimage.svg";
 }
 
 function ShowChannelsRecorded(lastChannel){
