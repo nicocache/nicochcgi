@@ -701,7 +701,7 @@
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
             }
             else if(comment.mail!=null && ContainsCommand(comment.mail,"shita")){
-              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,(commentLines.length-1.0)*height*heightScale);
+              r=new Coordinate(canvas1.width/2.0-comment.width/2.0,0);
               if(ContainsCommand(comment.mail,"ender")){}else{
               if(comment.lastY>=0){
                 r.y=comment.lastY*canvas1.width;
@@ -735,14 +735,13 @@
 context1.rect(r.x,r.y+height,comment.width,-height*heightScale);
 context1.stroke();
 */
-              let lineCnt=commentLines.length;
               if(!ContainsCommand(comment.mail,"ender")){
-                rangesShita.push(new range(r.y,lineCnt*height*heightScale));
+                rangesShita.push(new range(r.y,commentLines.length*height*heightScale));
                 //rangesShita.push(new range(r.y,height*heightScale));
               }
 
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
-              r.y=canvas1.height-r.y-(lineCnt-1)*height*heightScale;
+              r.y=canvas1.height-r.y-(commentLines.length-1)*height*heightScale;
               comment.lastYReal=(r.y-height*heightScale)/canvas1.width;
 
               context1.textBaseline="bottom";
