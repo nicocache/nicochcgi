@@ -73,6 +73,9 @@ window.addEventListener("keydown", function (e){
       OpenVideo(SelectedItem);
     }
     e.preventDefault();
+  }else if(65  <= e.keyCode && e.keyCode <= 90){
+    var char = String.fromCharCode(e.keyCode);
+    SelectItemByAlphabet(char);
   }
 },false);
 
@@ -114,8 +117,6 @@ function OpenVideo(item){
 
 function SelectItem(row,column){
   SelectionClear();
-  /*SelectedRow=row;
-  SelectedColumn=column;*/
 
   var container_ch = GetSelectedContainer();
 
@@ -135,10 +136,49 @@ function SelectItem(row,column){
   console.log("invalid selection: "+row+","+column);
 }
 
+function SelectItemIndex(index){
+  SelectionClear();
+
+  var container_ch = GetSelectedContainer();
+
+  for(var item_row of container_ch.children){
+    for(var item of item_row.children){
+      if(parseInt(item.getAttribute("item_count"))==index){
+        SelectItemDiv(item);
+        return;
+      }
+    }
+  }
+  console.log("invalid selection: "+index);
+}
+
 function SelectItemDiv(item){
   item.classList.add("selected");
   SelectedItem=item;
   ScrollInto(item);
+}
+
+function SelectItemByAlphabet(alphabet){
+  if(SelectedParent!=null){return;}
+  var current_cnt = parseInt(SelectedItem.getAttribute("item_count"));
+  var results = [];
+  var current_index=-1;
+  for(let i=0; i<Channels["recorded_channels"].length; i++){
+    if(Channels["recorded_channels"][i]["channel_id"][0].toLowerCase()==alphabet.toLowerCase()){
+      results.push(i);
+      if(i == current_cnt){current_index = results.length-1;}
+    }
+  }
+  if(results.length==0){return;}
+  if(current_index != -1){
+    if(current_index==results.length-1){
+      SelectItemIndex(results[0]);
+    }else{
+      SelectItemIndex(results[current_index+1]);
+    }
+  }else{
+    SelectItemIndex(results[0]);
+  }
 }
 
 function ScrollInto(item){
