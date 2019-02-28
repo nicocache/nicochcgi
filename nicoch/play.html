@@ -222,7 +222,7 @@
           let calcstyle=window.getComputedStyle(menu);
           menu.style.left=Math.max(Math.min(e.offsetX,parseInt(canvasStyle.width)-parseInt(calcstyle.width)-10),10)+"px";
           menu.style.top=Math.max(10,Math.min(e.offsetY,parseInt(canvasStyle.height)-parseInt(calcstyle.height)-10))+"px";
-          preventDefault();
+          e.preventDefault();
         }else{
           if(menu.classList.contains('show')) {
             menu.classList.remove('show');
@@ -259,7 +259,7 @@
         }
       }
       function Coord(x,y){this.x=x;this.y=y;}
-      document.onkeydown = function (e){OnKeyDown(e.keyCode,e.key);};
+      document.onkeydown = function (e){OnKeyDown(e.keyCode,e.key,function(){e.preventDefault();});};
       function OnKeyDown(keyCode,key,preventDefault){
         let video1=document.getElementsByTagName("video")[0];
         if(keyCode==37 || keyCode==227 || key=="ArrowLeft" || key=="Left"){
