@@ -145,10 +145,10 @@ function AppendVideoGroup(container,item){
     let video=videos[key];
     let a=document.createElement("a");
 
-    a.setAttribute("href",video.player_url);
-    //a.setAttribute("href",video.player_url_channel);
-    a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url);return false;};
-    //a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url_channel);return false;};
+    //a.setAttribute("href",video.player_url);
+    a.setAttribute("href",video.player_url_channel);
+    //a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url);return false;};
+    a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url_channel);return false;};
     a.onmouseover = function(e){PopupTimer=setTimeout(function(){PopupShow(e,video,a)},500);};
     a.onmouseleave = function(){clearTimeout(PopupTimer); PopupHide();};
     a.innerText=video.title;

@@ -105,12 +105,23 @@
         if(hash[1]){
           let ChannelId=hash[1];
           //動画アドレス設定
-          video1.src="movie.cgi?c="+ChannelId+"&v="+id;
+          SetVideoSource("movie.cgi?c="+ChannelId+"&v="+id);
         }else{
           //動画アドレス設定
-          video1.src="movie.cgi?v="+id;
+          SetVideoSource("movie.cgi?v="+id);
+        }
+
+        if(hash[2] && hash[2]=="repeat"){
+          video1.loop=true;
+        }else{
+          video1.loop=false;
         }
         return id;
+      }
+      
+      function SetVideoSource(src){
+        let video=document.getElementsByTagName("video")[0];
+        if(src!=video.getAttribute("src")){video.src=src;}
       }
 
       var CanvasMessage="";
@@ -211,7 +222,7 @@
           let calcstyle=window.getComputedStyle(menu);
           menu.style.left=Math.max(Math.min(e.offsetX,parseInt(canvasStyle.width)-parseInt(calcstyle.width)-10),10)+"px";
           menu.style.top=Math.max(10,Math.min(e.offsetY,parseInt(canvasStyle.height)-parseInt(calcstyle.height)-10))+"px";
-          e.preventDefault();
+          preventDefault();
         }else{
           if(menu.classList.contains('show')) {
             menu.classList.remove('show');
@@ -230,55 +241,60 @@
       }
 
       function Start(){
+        let comment_org=CommentSource;
         let id=SetVideoLocation();
 
-        let video1=document.getElementsByTagName("video")[0];
         if(id!="" && id!=null){
           UpdateLinkId(id);
           MovieId=id;
         }
 
-        GetChatXML(function(xml) {
-          Comments=ParseComment(xml);
-          CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
-        });
+        if(CommentSource!=comment_org){
+          GetChatXML(function(xml) {
+            Comments=ParseComment(xml);
+            NotifyCommentUpdate(Comments);
+            if(CommentTimer){clearInterval(CommentTimer);}
+            CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+          });
+        }
       }
       function Coord(x,y){this.x=x;this.y=y;}
-      document.onkeydown = function (e){
+      document.onkeydown = function (e){OnKeyDown(e.keyCode,e.key);};
+      function OnKeyDown(keyCode,key,preventDefault){
         let video1=document.getElementsByTagName("video")[0];
-        if(e.keyCode==37 || e.keyCode==227 || e.key=="ArrowLeft" || e.key=="Left"){
+        if(keyCode==37 || keyCode==227 || key=="ArrowLeft" || key=="Left"){
           video1.currentTime-=10;
           ShowCurrentTime();
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.keyCode==39 || e.keyCode==228 || e.key=="ArrowRight" || e.key=="Right"){
+        else if(keyCode==39 || keyCode==228 || key=="ArrowRight" || key=="Right"){
           video1.currentTime+=10;
           ShowCurrentTime();
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.keyCode==38 || e.key=="ArrowUp" || e.key=="Up"){
+        else if(keyCode==38 || key=="ArrowUp" || key=="Up"){
           video1.volume=Math.min(video1.volume+0.05,1.0);
           ShowVolume();
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.keyCode==40 || e.key=="ArrowDown" || e.key=="Down"){
+        else if(keyCode==40 || key=="ArrowDown" || key=="Down"){
           video1.volume=Math.max(video1.volume-0.05,0.0);
           ShowVolume();
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.keyCode==32 || e.keyCode==179 || e.key=="Spacebar" || e.key==" " || e.key=="MediaPlayPause"){
+        else if(keyCode==32 || keyCode==179 || key=="Spacebar" || key==" " || key=="MediaPlayPause"){
           if(video1.paused){video1.play();}else{video1.pause();}
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.key=="Play" && video1.paused){video1.play();e.preventDefault();}
-        else if((e.key=="Pause" || e.key=="MediaPause") && !video1.paused){video1.pause();e.preventDefault();}
-        else if(e.keyCode==67 || e.key=="c" || e.key=="ColorF2Yellow"){
+        else if(key=="Play" && video1.paused){video1.play();preventDefault();}
+        else if((key=="Pause" || key=="MediaPause") && !video1.paused){video1.pause();preventDefault();}
+        else if(keyCode==67 || key=="c" || key=="ColorF2Yellow"){
           if(video1.controls){ToggleComment();}else{ToggleUi();}
-          e.preventDefault();
+          preventDefault();
         }
-        else if(e.keyCode==77 || e.key=="m"){video1.muted=!video1.muted;e.preventDefault();}
-        else if(e.keyCode==70 || e.key=="f"){ToggleFullScreenStatus();e.preventDefault();}
-        else if(e.keyCode==86 || e.key=="v"){ToggleUi();e.preventDefault();}//動画を一時停止して観察する隠しモード
+        else if(keyCode==77 || key=="m"){video1.muted=!video1.muted;preventDefault();}
+        else if(keyCode==70 || key=="f"){ToggleFullScreenStatus();preventDefault();}
+        else if(keyCode==86 || key=="v"){ToggleUi();preventDefault();}//動画を一時停止して観察する隠しモード
       }
       function PreparePictureInPicture(){
         let button=document.getElementById("toggle_pip");
@@ -905,6 +921,15 @@ testContext.stroke();
           }
         req.open('GET',CommentSource,true);
         req.send(null);
+      }
+
+      function NotifyCommentUpdate(comment){
+        if(window.parent){
+          let message={};
+          message.message="comment_updated";
+          message.comment=comment;
+          window.parent.postMessage(message, self.origin);
+        }
       }
 
       function RequestSize(width,height){
