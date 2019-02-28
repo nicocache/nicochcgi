@@ -44,6 +44,7 @@ iframe.channel_thumb{
 }
 
 div.channel_box iframe.channel_thumb{
+ border: solid 1px rgba(0,0,0,0.3);
 }
 
 div.channel_box iframe.channel_thumb::after{
@@ -101,4 +102,34 @@ input[type=submit]:hover{
 form{
  margin:0px;
  display:inline;
+}
+
+#popup{
+ display:block;
+ position:absolute;
+ top:0;
+ left:0;
+ /*border:solid 1px black;*/
+ background:white;
+ 
+ box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+
+#popup_text{
+}
+
+#popup_image{
+ width:320px;
+ height:180px;
+}
+
+#popup_container{
+ position:absolute;
+ display:none;
+ top:0;
+ left:0;
+}
+
+#popup_container.show{
+ display:block;
 }

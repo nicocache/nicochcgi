@@ -695,7 +695,6 @@
                 rangesUe.push(new range(r.y,commentLines.length*height*heightScale));
               }
 
-//              r.y+=height*(heightScale-1);
               comment.lastYReal=r.y/canvas1.width;
               context1.textBaseline="top";
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
@@ -751,6 +750,7 @@ context1.stroke();
 //              r.y+=height*(heightScale-1)/2.0;
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
               r.y+=height/2.0;
+              r.y=Math.max(r.y,height*heightScale/2.0);
               operatedComments.push(comment);
               context1.textBaseline="middle";
               comment.lastYReal=(r.y-height*heightScale/2.0)/canvas1.width;

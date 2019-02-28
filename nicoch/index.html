@@ -46,15 +46,26 @@
     <h1>録画予約中のチャンネル</h1>
     <div class='channel_group' id="container_channel_recording">
     </div>
+    <div id="popup_container">
+      <div id="popup" onclick="PopupHide()">
+        <p id="popup_text"></p>
+        <img id="popup_image" onerror="SetNoImage(this);" />
+      </div>
+    </div>
     <script type="text/javascript"> 
 //<[CDATA[
 var Channels;
 var LastChannel=localStorage.getItem("niconico_last_played_channel")?localStorage.getItem("niconico_last_played_channel"):null;
 GetData(function(){ShowChannels()});
+var PopupTimer;
 
 function ShowChannels(){
   ShowChannelsRecorded();
   ShowChannelsRecording();
+}
+
+function SetNoImage(item){
+  item.src="noimage.svg";
 }
 
 function ShowChannelsRecorded(){
@@ -62,11 +73,13 @@ function ShowChannelsRecorded(){
   ClearChild(container_ch);
  
   var recorded=Channels["recorded_channels"];
+  var recording_remaining = Channels["recording_channels"].map(x => x.channel_id);
  
   var scrollTarget=null;
-  for(var item in recorded){
-    var div=AppendChannelBoxRecorded(container_ch,recorded[item]);
-    if(LastChannel!=null && recorded[item].channel_id == LastChannel){
+  for(var item of recorded){
+    var div=AppendChannelBoxRecorded(container_ch,item,recording_remaining.includes(item.channel_id));
+    recording_remaining=recording_remaining.filter(x => x!=item.channel_id);
+    if(LastChannel!=null && item.channel_id == LastChannel){
       scrollTarget=div;
     }
   }
@@ -74,14 +87,17 @@ function ShowChannelsRecorded(){
   if(scrollTarget!=null){
     ScrollInto(scrollTarget);
   }
+  
+  return recording_remaining;
 }
 
-function AppendChannelBoxRecorded(container,item){
+function AppendChannelBoxRecorded(container,item,addDelteButton){
   var div=document.createElement("div");
   div.setAttribute("class","channel_box");
   div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
   AppendVideoGroup(div,item);
   container.appendChild(div);
+  if(addDelteButton) div.insertAdjacentHTML('beforeend', GetDeleteButton(item.channel_id));
   return div;
 }
 
@@ -112,9 +128,12 @@ function ShowChannelsRecording(){
 function AppendChannelBoxRecording(container,item){
   var div=document.createElement("div");
   div.setAttribute("class","channel_box");
-  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"
-    +"<form action='modify.cgi' method='post'><input type='hidden' name='a1' value='https://ch.nicovideo.jp/"+item["channel_id"]+"' /><input type='hidden' name='op' value='del' /><input class='delete' type='submit' value='削除' /></form>";
+  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"+GetDeleteButton(item.channel_id);
   container.appendChild(div);
+}
+
+function GetDeleteButton(channel_id){
+  return "<form action='modify.cgi' method='post'><input type='hidden' name='a1' value='https://ch.nicovideo.jp/"+channel_id+"' /><input type='hidden' name='op' value='del' /><input class='delete' type='submit' value='予約解除' /></form>";;
 }
 
 function AppendVideoGroup(container,item){
@@ -123,11 +142,50 @@ function AppendVideoGroup(container,item){
   var html="";
   var videos=item.videos;
   for(var key in videos){
-    var video=videos[key];
-    html+="<a href='"+video.player_url+"' onclick='OpenVideo(\""+video.id+"\",\""+item.channel_id+"\")'>"+video.title+"</a>(<a href='https://www.nicovideo.jp/watch/"+video.id+"'>org</a>)<br />";
+    let video=videos[key];
+    let a=document.createElement("a");
+
+    a.setAttribute("href",video.player_url);
+    a.onclick = function(){OpenVideo(video.id,item.channel_id);};
+    a.onmouseover = function(e){PopupTimer=setTimeout(function(){PopupShow(e,video,a)},500);};
+    a.onmouseleave = function(){clearTimeout(PopupTimer); PopupHide();};
+    a.innerText=video.title;
+
+    div.appendChild(a);
+    div.appendChild(document.createElement("br"));
+    //html+="<a href='"+video.player_url+"' onclick='OpenVideo(\""+video.id+"\",\""+item.channel_id+"\")' onmouseover='PopupThumbnail('""')'>"+video.title+"</a><br />";
   }
-  div.innerHTML=html;
+  //div.innerHTML=html;
   container.appendChild(div);
+}
+
+function PopupShow(e,video,a){
+  var image = document.getElementById("popup_image");
+  image.setAttribute("src",video.thumbnail_url);
+
+  var text = document.getElementById("popup_text");
+  text.innerText = video.title;
+  
+  var container = document.getElementById("popup_container");
+  container.classList.add('show');
+  
+  var popup = document.getElementById("popup");
+  var popupStyle = window.getComputedStyle(popup);
+  var docWidth = document.documentElement.scrollWidth || document.body.scrollWidth;
+  var docHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+  var docCHeight = window.outerHeight;
+  var offset=30;
+  popup.style.left=Math.max(0,Math.min(e.pageX+offset,docWidth-parseInt(popupStyle.width)-offset))+"px";
+  popup.style.top=window.pageYOffset+docCHeight < e.pageY+offset*2+parseInt(popupStyle.height) ? 
+    Math.max(offset,e.pageY-offset-parseInt(popupStyle.height))+"px"
+    : Math.max(offset,Math.min(e.pageY+offset,docHeight-parseInt(popupStyle.height)-offset))+"px";
+}
+
+function PopupHide(){
+  var popup = document.getElementById("popup_container");
+  if(popup.classList.contains('show')) {
+    popup.classList.remove('show');
+  }
 }
 
 function ClearChild(container){
