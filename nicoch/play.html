@@ -19,7 +19,7 @@
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;overflow:hidden;" >
-      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
+      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onended="MovieEnded();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
@@ -123,29 +123,27 @@
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       var CommentSource="";
       var ShowComment=localStorage.getItem("niconico_comment_enabled")?localStorage.getItem("niconico_comment_enabled")=="true":true;
-      var FullScreenSetting=2;
+      var FullScreenSetting=1;
       var Comments="";
       var Background;
 
       window.onload = function() {
-        Init();
+        Start();
+        if(localStorage.getItem("niconico_volume")) document.getElementsByTagName("video")[0].volume=localStorage.getItem("niconico_volume");
         Background=localStorage.getItem("niconico_background")?localStorage.getItem("niconico_background"):"black";
         ApplyBackgroundSetting();
         ApplyFullScreenSetting();
         window.addEventListener('resize',function(event){
           ApplyFullScreenSetting();
-          //if(!document.pictureInPictureElement){document.getElementById("toggle_pip").style.opacity=1.0;}
           });
         SetTouchEvent();
         SetFpsDisplay();
         setTimeout(function(){HideFullScreenCenter();},3000);
         SetControllerVisibility(false);
         PreparePictureInPicture();
-        GetChatXML(function(xml) {
-          Comments=ParseComment(xml);
-          CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
-        });
       };
+      
+      window.addEventListener("hashchange",function(){Start();},false);
       
       document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
         let canvas1=document.getElementsByTagName("canvas")[0];
@@ -231,7 +229,7 @@
         document.getElementById("toggle_fullscreen_center").style.display="none";
       }
 
-      function Init(){
+      function Start(){
         let id=SetVideoLocation();
 
         let video1=document.getElementsByTagName("video")[0];
@@ -240,9 +238,10 @@
           MovieId=id;
         }
 
-        let storage=localStorage;
-        let vol=storage.getItem("niconico_volume");
-        if(vol){ video1.volume= vol;}
+        GetChatXML(function(xml) {
+          Comments=ParseComment(xml);
+          CommentTimer=setInterval('DrawComment()', 1000.0/Fps);
+        });
       }
       function Coord(x,y){this.x=x;this.y=y;}
       document.onkeydown = function (e){
@@ -435,58 +434,40 @@
         }
       }
       function ToggleFullScreen(){
-        FullScreenSetting=(FullScreenSetting+1)%4;
-        if(FullScreenSetting==1){FullScreenSetting++;}
+        FullScreenSetting=(FullScreenSetting+1)%3;
 
         if(FullScreenSetting==0){SetMessageCanvas("標準サイズ",3000);}
-        else if(FullScreenSetting==1){SetMessageCanvas("最適表示(コントローラー常時表示)",3000);}
-        else if(FullScreenSetting==2){SetMessageCanvas("最適表示",3000);}
-        else if(FullScreenSetting==3){SetMessageCanvas("全体表示",3000);}
+        else if(FullScreenSetting==1){SetMessageCanvas("最適表示",3000);}
+        else if(FullScreenSetting==2){SetMessageCanvas("全体表示",3000);}
 
         ApplyFullScreenSetting();
       }
       function ApplyFullScreenSetting(){
-        if(FullScreenSetting==1){SetSizeFullFixed();}
-        else if(FullScreenSetting==2){SetSizeFullFixedUncontorolable();}
-        else if(FullScreenSetting==3){SetSizeFull();}
+        if(FullScreenSetting==1){SetSizeFullFixedUncontorolable();}
+        else if(FullScreenSetting==2){SetSizeFull();}
         else{SetSizeDefault();}
       }
       function SetSizeFull(){
-        let w=window.innerWidth;
-        let h=window.innerHeight;
-        let hc=document.getElementById("controller").offsetHeight;
-        //SetSize(w,h-hc);
-        if(w/(16/9)+hc>h){SetSize(w,h);}else{SetSize(w,h-hc);}
-      }
-      function SetSizeFullControlable(){
-        let w=window.innerWidth;
-        let h=window.innerHeight;
-        let hc=document.getElementById("controller").offsetHeight;
-        SetSize(w,h-hc);
-      }
-      function SetSizeFullFixed(){
-        let w=window.innerWidth;
-        let h=window.innerWidth/(16/9);
-        let hc=document.getElementById("controller").offsetHeight;
-        if(h+hc>window.innerHeight){
-          h=window.innerHeight-hc;
-          w=h*(16/9);
-        }
+        let w=parent?parent.innerWidth:window.innerWidth;
+        let h=parent?parent.innerHeight:window.innerHeight;
         SetSize(w,h);
       }
       function SetSizeFullFixedUncontorolable(){
-        let w=window.innerWidth;
-        let h=window.innerWidth/(16/9);
+        let w=parent?parent.innerWidth:window.innerWidth;
+        let h=parent?parent.innerHeight:window.innerHeight;
+        let ht=w*9.0/16.0;
+        let hp=window.innerHeight;
         let hc=document.getElementById("controller").offsetHeight;
-        if(h>window.innerHeight){
-          h=window.innerHeight;
-          w=h*(16/9);
+        if(ht>h){
+          ht=h;
+          w=ht*(16/9);
         }
-        SetSize(w,h);
+        SetSize(w,ht);
       }
       function SetSizeDefault(){
-        let w=Math.min(window.innerWidth,855);
-        SetSize(w,w/855.0*481.0);
+        let w=parent?parent.innerWidth:window.innerWidth;
+        let wm=Math.min(w,855);
+        SetSize(wm,wm/855.0*481.0);
       }
       function SetSize(width,height){
         let videoDiv1= document.getElementById("VideoPlayer");
@@ -505,6 +486,8 @@
         video1.style.height=height+"px";
         video1.height=height;
         canvas1.height=height*window.devicePixelRatio;
+        
+        RequestSize(width,height);
       }
       function ToggleBackground(){
         if(Background=="black"){Background="white";}
@@ -562,7 +545,8 @@
       function OpenInNicovideo(){
         if(MovieId){
           let video=document.getElementsByTagName("video")[0];
-          window.location.href = "http://www.nicovideo.jp/watch/"+MovieId+"?from="+Math.floor(video.currentTime);
+          let url = "http://www.nicovideo.jp/watch/"+MovieId+"?from="+Math.floor(video.currentTime);
+          if(parent){parent.location.href=url;}else{window.location.href=url;}
           return true;
         }
         return false;
@@ -921,6 +905,24 @@ testContext.stroke();
           }
         req.open('GET',CommentSource,true);
         req.send(null);
+      }
+
+      function RequestSize(width,height){
+        if(window.parent){
+          let message={};
+          message.message="request_size";
+          message.width=width;
+          message.height=height;
+          window.parent.postMessage(message, self.origin);
+        }
+      }
+      
+      function MovieEnded(){
+        if(window.parent){
+          let message={};
+          message.message="movie_ended";
+          window.parent.postMessage(message, self.origin);
+        }
       }
 //]]>
     </script>

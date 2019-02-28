@@ -108,9 +108,9 @@ function ScrollInto(item){
     inline: 'nearest',});
 }
 
-function OpenVideo(movie_id,channel_id){
+function OpenVideo(movie_id,channel_id,player){
   localStorage.setItem("niconico_last_played_channel",channel_id);
-  window.location.href = "https://www.nicovideo.jp/watch/"+video_id;
+  window.location.href = player;
   return false;
 }
 
@@ -146,7 +146,9 @@ function AppendVideoGroup(container,item){
     let a=document.createElement("a");
 
     a.setAttribute("href",video.player_url);
-    a.onclick = function(){OpenVideo(video.id,item.channel_id);};
+    //a.setAttribute("href",video.player_url_channel);
+    a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url);return false;};
+    //a.onclick = function(){OpenVideo(video.id,item.channel_id,video.player_url_channel);return false;};
     a.onmouseover = function(e){PopupTimer=setTimeout(function(){PopupShow(e,video,a)},500);};
     a.onmouseleave = function(){clearTimeout(PopupTimer); PopupHide();};
     a.innerText=video.title;

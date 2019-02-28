@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>ニコニコ動画プレイヤー</title>
+    <style type="text/css">
+html, body { height:100%; margin:0; background:black; color:white;}
+iframe {
+  border:none;
+  margin: 0px auto;
+  position: relative;
+  display: block;
+}
+a {color:#AAAAAA;text-decoration: none;}
+#controler {margin:10px;}
+    </style>
+  </head>
+  <body>
+    <iframe id="player" allow="fullscreen"></iframe>
+    <div id="controler">
+    </div>
+    <script>
+//<![CDATA[
+'use strict';
+
+window.onload = function() {
+  SetPlayerSize();
+  GetData(function(){SetId();ShowChannel();PlayDefault();});
+};
+
+window.addEventListener('resize',function(event){
+  SetPlayerSize();
+},false);
+
+var VideoCount=0;
+var ChannelId;
+var Channels;
+
+function ShowChannel(){
+  var currentChannel=GetCurrentChannel();
+  var target=document.getElementById("controler");
+  ClearChild(target);
+  for(let video_key in currentChannel.videos){
+    let video=currentChannel.videos[video_key];
+    let a=document.createElement("a");
+    
+    a.setAttribute("href",video.player_url);
+    //a.onclick = function(){PlayUrl(video.player_url);return false;};
+    a.onclick = function(){Play(parseInt(video_key));return false;};
+    a.innerText=video.title;
+    
+    target.appendChild(a);
+    target.appendChild(document.createElement("br"));
+  }
+}
+
+function SetHash(channel,video){
+  window.location.hash=channel+(video?":"+video:"");
+}
+
+function PlayUrl(player){
+  var iframe=document.getElementById("player");
+  var iframed = (iframe.contentWindow || iframe.contentDocument);
+  iframe.setAttribute("src",player);
+}
+
+function ClearChild(container){
+  while(container.hasChildNodes()){container.removeChild(container.lastChild);}
+}
+
+function PlayDefault(){
+  VideoCount=Play(VideoCount);
+}
+
+function PlayNext(){
+  var currentChannel=GetCurrentChannel();
+  VideoCount=Math.max(0,Math.min(VideoCount+1,currentChannel.videos.length-1));
+  PlayDefault();
+}
+
+function PlayPrevious(){
+  var currentChannel=GetCurrentChannel();
+  VideoCount=Math.max(0,Math.min(VideoCount-1,currentChannel.videos.length-1));
+  PlayDefault();
+}
+
+function Play(count){
+  var currentChannel=GetCurrentChannel();
+  if(count<currentChannel.videos.length){
+    PlayUrl(currentChannel.videos[count].player_url);
+    SetHash(currentChannel.channel_id,currentChannel.videos[count].id);
+    VideoCount=count;
+    return count;
+  }else if(currentChannel.videos.length>0){
+    PlayUrl(currentChannel.videos[0].player_url);
+    SetHash(currentChannel.channel_id,currentChannel.videos[0].id);
+    VideoCount=count;
+    return 0;
+  }
+}
+
+function GetCurrentChannel(){
+  var result = Channels.recorded_channels.filter(x=>x.channel_id==ChannelId);
+  if(result.length > 0){
+    return result[0];
+  }else{
+    return null;
+  }
+}
+
+function SetId(){
+  let hash=window.location.hash.split(":");
+  ChannelId=hash[0].slice(1);
+  if(hash[1]){
+    let count=GetCurrentChannel().videos.findIndex(x=>x.id == parseInt(hash[1]));
+    console.log(count);
+    VideoCount=count==-1?VideoCount:count;
+  }
+}
+
+function SetPlayerSize(){
+  let w=document.body.clientWidth;
+  let h=document.body.clientHeight;
+  let v=document.getElementById("player");
+  v.style.width=w+"px";
+  v.style.height=Math.min(h,w*9.0/16.0)+"px";
+}
+
+function GetData(callback){
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function()
+  {
+    if( this.readyState == 4 && this.status == 200 )
+    {
+      Channels = this.response;
+      callback();
+    }
+  }
+  xhr.open( 'GET', 'api.cgi', true );
+  xhr.responseType = 'json';
+  xhr.send( null );
+}
+
+window.addEventListener("message", function(e){
+  if(e.origin != self.origin) return;
+  if(e.data.message=="movie_ended"){
+    PlayNext();
+  }else if(e.data.message=="request_size"){
+    let v=document.getElementById("player");
+    v.style.width=e.data.width+"px";
+    v.style.height=e.data.height+"px";
+  }
+}, false);
+//]]>
+    </script>
+  </body>
+
+</html>
+
