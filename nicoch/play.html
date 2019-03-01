@@ -332,6 +332,10 @@
         let video=document.getElementsByTagName("video")[0];
         SetMessageCanvas("音量: "+Math.round(video.volume*100)+"%",1000);
       }
+      function SeekToComment(comment){
+        let video=document.getElementsByTagName("video")[0];
+        video.currentTime=comment.vpos/100.0;
+      }
       function ToggleFps(){
         if(Fps==60){Fps=15;}
         else if(Fps==15){Fps=24;}
