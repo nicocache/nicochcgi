@@ -476,8 +476,6 @@
         let w=GetWindowWidth();
         let h=GetWindowHeight();
         let ht=w*9.0/16.0;
-        let hp=window.innerHeight;
-        let hc=document.getElementById("controller").offsetHeight;
         if(ht>h){
           ht=h;
           w=ht*(16/9);
@@ -491,11 +489,12 @@
       }
       function GetWindowWidth(){
         //return parent?parent.innerWidth:window.innerWidth;
-        return parent?parent.document.body.clientWidth:window.document.body.innerWidth;
+        //clientWidthはスクロールバー対策。
+        return window!=window.parent?parent.document.body.clientWidth:window.innerWidth;
       }
       function GetWindowHeight(){
         //return parent?parent.innerHeight:window.innerHeight;
-        return parent?parent.document.body.clientHeight:window.document.body.innerHeight;
+        return window!=window.parent?parent.innerHeight:window.innerHeight;
       }
       function SetSize(width,height){
         let videoDiv1= document.getElementById("VideoPlayer");
@@ -574,7 +573,7 @@
         if(MovieId){
           let video=document.getElementsByTagName("video")[0];
           let url = "http://www.nicovideo.jp/watch/"+MovieId+"?from="+Math.floor(video.currentTime);
-          if(parent){parent.location.href=url;}else{window.location.href=url;}
+          if(window!=window.parent){parent.location.href=url;}else{window.location.href=url;}
           return true;
         }
         return false;
@@ -936,7 +935,7 @@ testContext.stroke();
       }
 
       function NotifyCommentUpdate(comment){
-        if(window.parent){
+        if(window!=window.parent){
           let message={};
           message.message="comment_updated";
           message.comment=comment;
@@ -945,7 +944,7 @@ testContext.stroke();
       }
 
       function RequestSize(width,height){
-        if(window.parent){
+        if(window!=window.parent){
           let message={};
           message.message="request_size";
           message.width=width;
@@ -955,7 +954,7 @@ testContext.stroke();
       }
       
       function MovieEnded(){
-        if(window.parent){
+        if(window!=window.parent){
           let message={};
           message.message="movie_ended";
           window.parent.postMessage(message, self.origin);
