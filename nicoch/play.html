@@ -464,13 +464,13 @@
         else{SetSizeDefault();}
       }
       function SetSizeFull(){
-        let w=parent?parent.innerWidth:window.innerWidth;
-        let h=parent?parent.innerHeight:window.innerHeight;
+        let w=GetWindowWidth();
+        let h=GetWindowHeight();
         SetSize(w,h);
       }
       function SetSizeFullFixedUncontorolable(){
-        let w=parent?parent.innerWidth:window.innerWidth;
-        let h=parent?parent.innerHeight:window.innerHeight;
+        let w=GetWindowWidth();
+        let h=GetWindowHeight();
         let ht=w*9.0/16.0;
         let hp=window.innerHeight;
         let hc=document.getElementById("controller").offsetHeight;
@@ -481,9 +481,17 @@
         SetSize(w,ht);
       }
       function SetSizeDefault(){
-        let w=parent?parent.innerWidth:window.innerWidth;
+        let w=GetWindowWidth();
         let wm=Math.min(w,855);
         SetSize(wm,wm/855.0*481.0);
+      }
+      function GetWindowWidth(){
+        //return parent?parent.innerWidth:window.innerWidth;
+        return parent?parent.document.body.clientWidth:window.document.body.innerWidth;
+      }
+      function GetWindowHeight(){
+        //return parent?parent.innerHeight:window.innerHeight;
+        return parent?parent.document.body.clientHeight:window.document.body.innerHeight;
       }
       function SetSize(width,height){
         let videoDiv1= document.getElementById("VideoPlayer");
