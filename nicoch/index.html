@@ -73,12 +73,11 @@ function ShowChannelsRecorded(){
   ClearChild(container_ch);
  
   var recorded=Channels["recorded_channels"];
-  var recording_remaining = Channels["recording_channels"].map(x => x.channel_id);
+  var recording=Channels["recording_channels"];
  
   var scrollTarget=null;
   for(var item of recorded){
-    var div=AppendChannelBoxRecorded(container_ch,item,recording_remaining.includes(item.channel_id));
-    recording_remaining=recording_remaining.filter(x => x!=item.channel_id);
+    var div=AppendChannelBoxRecorded(container_ch,item,recording.filter(x=> x.channel_id == item.channel_id));
     if(LastChannel!=null && item.channel_id == LastChannel){
       scrollTarget=div;
     }
@@ -87,8 +86,6 @@ function ShowChannelsRecorded(){
   if(scrollTarget!=null){
     ScrollInto(scrollTarget);
   }
-  
-  return recording_remaining;
 }
 
 function AppendChannelBoxRecorded(container,item,addDelteButton){
@@ -97,7 +94,7 @@ function AppendChannelBoxRecorded(container,item,addDelteButton){
   div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>";
   AppendVideoGroup(div,item);
   container.appendChild(div);
-  if(addDelteButton) div.insertAdjacentHTML('beforeend', GetDeleteButton(item.channel_id));
+  if(addDelteButton.length>0) div.insertAdjacentHTML('beforeend', GetDeleteButton(addDelteButton[0]));
   return div;
 }
 
@@ -128,12 +125,12 @@ function ShowChannelsRecording(){
 function AppendChannelBoxRecording(container,item){
   var div=document.createElement("div");
   div.setAttribute("class","channel_box");
-  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"+GetDeleteButton(item.channel_id);
+  div.innerHTML="<iframe class='channel_thumb' scrolling='no' src='https://ch.nicovideo.jp/"+item["channel_id"]+"/thumb_channel'></iframe>"+GetDeleteButton(item);
   container.appendChild(div);
 }
 
-function GetDeleteButton(channel_id){
-  return "<form action='modify.cgi' method='post'><input type='hidden' name='a1' value='https://ch.nicovideo.jp/"+channel_id+"' /><input type='hidden' name='op' value='del' /><input class='delete' type='submit' value='予約解除' /></form>";;
+function GetDeleteButton(channel){
+  return "<form action='modify.cgi' method='post'><input type='hidden' name='a1' value='"+channel.channel_url+"' /><input type='hidden' name='op' value='del' /><input class='delete' type='submit' value='予約解除' /></form>";;
 }
 
 function AppendVideoGroup(container,item){

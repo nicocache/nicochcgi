@@ -37,7 +37,7 @@ a {color:white;text-decoration: none;}
     <iframe id="player" allow="fullscreen"></iframe>
     <div id="controller">
       <div id="videos_container">
-          <a href="." onclick="ToggleBlightness();return false;" style="font-weight:bold;">
+          <a href="." onclick="ToggleBlightness();return false;" style="font-weight:bold;" id="button_brightness">
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" overflow="visible" enable-background="new 0 0 20 20" xml:space="preserve" width="40" height="40" style="margin:5px;">
   <line fill="none" stroke="#FFFFFF" stroke-linecap="round" x1="10" y1="10" x2="10" y2="3"/>
   <path fill="none" stroke="#FFFFFF" stroke-linecap="round" d="M13.535,6.465c1.953,1.952,1.953,5.118,0,7.07 c-1.952,1.953-5.118,1.953-7.07,0c-1.953-1.952-1.953-5.118,0-7.07"/>
@@ -107,8 +107,16 @@ PlayDefault();
 function ToggleBlightness(){
   var elem=document.getElementById("controller");
   Blightness=!Blightness;
-  if(Blightness) elem.style.filter="brightness(100%)";
-  else elem.style.filter="brightness(5%)";
+  if(Blightness){
+    document.getElementById("controller").style.pointerEvents="auto";
+    document.getElementById("button_brightness").style.pointerEvents="auto";
+    elem.style.filter="brightness(100%)";
+  }
+  else{
+    document.getElementById("controller").style.pointerEvents="none";
+    document.getElementById("button_brightness").style.pointerEvents="auto";
+    elem.style.filter="brightness(10%)";
+  }
 }
 
 function ToggleRepeat(){
@@ -267,7 +275,6 @@ function SetInfo(video){
   title.innerText=video.title;
   document.title=video.title;
   
-  console.log(VideoCount);
   document.getElementById("button_prev").style.filter=
     VideoCount==0 ? "brightness(30%)" : "brightness(100%)";
   document.getElementById("button_next").style.filter=

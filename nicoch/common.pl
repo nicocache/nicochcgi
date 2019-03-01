@@ -3,6 +3,7 @@ use strict;
 use Digest::MD5 qw/md5_hex/;
 use File::MimeInfo qw(globs);
 use File::Basename 'basename' , 'dirname';
+use Digest::SHA qw(sha256_hex);
 
 sub GetChannels{
   my @result;
@@ -107,6 +108,15 @@ sub GetForm{
     $result{$name}=$value;
   }
   return %result;
+}
+
+sub GetHashed{
+  my ($password,$salt,$count)=@_;
+  my $result=$salt."\n".$password;
+  for(my $i=0;$i<$count;$i++){
+    $result=sha256_hex($result);
+  }
+  return $result;
 }
 
 1;
