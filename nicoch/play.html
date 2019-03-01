@@ -103,7 +103,7 @@
         //コメントプロキシ設定
         CommentSource="commentproxy.cgi?id="+id;
         if(hash[1]){
-          let ChannelId=hash[1];
+          ChannelId=hash[1];
           //動画アドレス設定
           SetVideoSource("movie.cgi?c="+ChannelId+"&v="+id);
         }else{
@@ -127,7 +127,7 @@
       var CanvasMessage="";
       var CanvasMessageDeadline=0;
       var CommentTimer;
-      var ChennelId;
+      var ChannelId;
       var MovieId;
       var CommentDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
       var OriginalCoord;
@@ -154,7 +154,7 @@
         PreparePictureInPicture();
       };
       
-      window.addEventListener("hashchange",function(){Start();},false);
+      window.addEventListener("hashchange",function(){Start();NotifyHashChange(MovieId,ChannelId);},false);
       
       document.getElementsByTagName("video")[0].addEventListener("contextmenu", function(e){
         let canvas1=document.getElementsByTagName("canvas")[0];
@@ -934,6 +934,16 @@ testContext.stroke();
         req.send(null);
       }
 
+      function NotifyHashChange(video_id,channel_id){
+        if(window!=window.parent){
+          let message={};
+          message.message="hash_changed";
+          message.video_id=video_id;
+          message.channel_id=channel_id;
+          window.parent.postMessage(message, self.origin);
+        }
+      }
+      
       function NotifyCommentUpdate(comment){
         if(window!=window.parent){
           let message={};
