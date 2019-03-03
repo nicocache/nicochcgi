@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 12.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 51448)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+	<!ENTITY ns_svg "http://www.w3.org/2000/svg">
+	<!ENTITY ns_xlink "http://www.w3.org/1999/xlink">
+]>
+<svg  version="1.0" id="_x30_" xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="720.709" height="720.709"
+	 viewBox="0 0 720.709 720.709" overflow="visible" enable-background="new 0 0 720.709 720.709" xml:space="preserve">
+
+  <polygon fill="#FFFFFF" points="216.354,360.354 216.354,504.354 72.354,504.354 360.354,648.354 648.354,504.354 504.354,504.354 504.354,360.354 "/>
+  <g>
+    <rect x="216.354" y="72.354" fill="#FFFFFF" width="288" height="108"/>
+    <rect x="216.354" y="216.354" fill="#FFFFFF" width="288" height="108"/>
+  </g>
+  <polyline fill="#FFFFFF" points="309.442,198.354 234.354,273.443 285.266,324.354 360.354,249.266 435.442,324.354 486.354,273.443 411.266,198.354 486.354,123.266 435.442,72.354 360.354,147.443 285.266,72.354 234.354,123.266 309.442,198.354 "/>
+</svg>

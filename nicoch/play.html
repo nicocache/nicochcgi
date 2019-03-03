@@ -10,10 +10,12 @@
       a.button_full{display: inline-block;padding: 0.7em 0.7em;
         text-decoration: none;
         color:rgba(255,255,255,0.1);background:rgba(0,0,0,0.0);border:0.1vw solid rgba(127,127,127,0.3);font-size:10vw;}
-      #contextmenu{display: none;color:white;position:absolute;z-index:5;top:0;left:0;background-color:black;border:1px solid #888;margin:0;
+      #contextmenu{display: none;color:white;position:absolute;z-index:5;top:0;left:0;background-color:rgba(0,0,0,0.8);border:1px solid #888;margin:0;
         text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
-      #contextmenu p.title{margin:0.3em;margin-bottom:0;font-weight: bold;}
+      #contextmenu p.title,#contextmenu p.info{margin:0.3em;}
+      #contextmenu p.title{font-weight: bold;margin-bottom:0;}
       #contextmenu p.menu{margin:0 0.3em;cursor: pointer;display: block;}
+      #contextmenu p.info{font-size:75%;font-color:rgba(255,255,255,0.5);}
       #contextmenu.show{display: block;text-decoration:none;}
     </style>
   </head>
@@ -180,10 +182,15 @@
             p.classList.add('title');
             menu.appendChild(p);
             
+            let pinfo = document.createElement('p');
+            pinfo.innerText="#"+comment.count+" "+comment.date.toLocaleString()
+            pinfo.classList.add('info');
+            menu.appendChild(pinfo);
+            
             if(comment.mail!=null && comment.mail != ""){
               let m = document.createElement('p');
               m.innerText=""+comment.mail;
-              m.classList.add('menu');
+              m.classList.add('info');
               menu.appendChild(m);
             }
             
@@ -335,6 +342,10 @@
       function SeekToComment(comment){
         let video=document.getElementsByTagName("video")[0];
         video.currentTime=comment.vpos/100.0;
+      }
+      function GetCurrentTime(){
+        let video=document.getElementsByTagName("video")[0];
+        return video.currentTime;
       }
       function ToggleFps(){
         if(Fps==60){Fps=15;}
@@ -889,13 +900,13 @@ testContext.stroke();
         let dom=parser.parseFromString(xml, 'text/xml');
         let chats=dom.getElementsByTagName("chat");
         for(let i=0 ; i < chats.length;i++){
-          let chat=function(text,vpos,mail,cnt){
+          let chat=function(text,vpos,mail,cnt,unixtime){
             this.text=text;
             this.vpos=vpos;
             if(mail!=null){
               this.mail=mail.toLowerCase();
             }else{
-              this.mail=mail;
+              this.mail="";
             }
             this.count=cnt;
             this.lastY=-1;
@@ -908,11 +919,14 @@ testContext.stroke();
             this.lastWidth=-1;
             this.lastDisplayed=0;
             this.lastHeight=-1;
+            //for info
+            this.date=new Date(unixtime);
           }
           let chatT=chats[i];
           let atdeleted=chats[i].getAttribute("deleted");
           if(atdeleted==0 || atdeleted==null){
-            result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail"),i));
+            result.push(new chat(chats[i].textContent,chats[i].getAttribute("vpos"),chats[i].getAttribute("mail"),parseInt(chats[i].getAttribute("no")),parseInt(chats[i].getAttribute("date"))*1000+
+              (chats[i].getAttribute("date_usec")?parseInt(chats[i].getAttribute("date_usec"))/1000.0:0)));
           }
         }
         result.sort(function(a,b){

@@ -7,14 +7,19 @@
     <title>ニコニコ動画プレイヤー</title>
     <style type="text/css">
 html, body { height:100%; margin:0; background:black; color:white; }
-iframe {
+iframe#player{
   border:none;
   margin: 0px auto;
   position: relative;
   display: block;
 }
+#player_container{z-index:1;position: relative;}
 a {color:white;text-decoration: none;}
-#controller {overflow-y:scroll;transition: filter 2s ease;}
+#controller_container {overflow-y:auto;position:relative; top:0; left:0;z-index:0;}
+#links {margin:1em;}
+#links a{padding:1em;transition: background-color 0.4s ease;}
+#links a:hover{background-color:rgba(255,255,255,0.1);}
+#controller {transition: filter 2s ease;}
 #videos_container {margin:20px;background-color:rgba(255,255,255,0.1);}
 #videos_container a, #videos_container p {display:inline-block;vertical-align: middle;}
 #videos {padding:8px;background-color:rgba(255,255,255,0.1);}
@@ -26,24 +31,27 @@ a {color:white;text-decoration: none;}
 .video p.count{width:2em;text-align:center;grid-column:1;}
 .video p.title{padding-left:1em;grid-column:3;}
 #comments{margin:20px;}
-.comment{padding:0.2em 0;transition: background-color 0.4s ease;overflow:hidden;display: grid;grid-template-columns: 2.5em 1fr;}
+.comment{padding:0.2em 0;transition: background-color 0.4s ease;overflow:hidden;display: grid;grid-template-columns: 2.5em 1fr;grid-template-rows:min-content min-content;margin:0.1em 0;}
 .comment:hover{background-color:rgba(255,255,255,0.1);}
-.comment p{display: flex;align-self: center;margin:0.1em 0;}
-.comment p.time{text-align:center;grid-column:1;}
-.comment p.text{padding-left:1em;grid-column:2;}
+.comment p{display: flex;align-self: center;margin:00;}
+.comment p.time{text-align:center;grid-column:1;grid-row: 1 / 3;}
+.comment p.text, .comment p.info{grid-column:2;padding-left:1rem;}
+.comment p.text{grid-row:1;}
+.comment p.info{grid-row:2;font-size:50%;color:rgba(255,255,255,0.5);}
+#float_icons{right:20px;position:fixed;bottom:0;margin:10px;}
+#float_icons a{display: inline-block;border-radius: 50%;background-color: black;filter: drop-shadow(0 0 0.75rem rgba(255,255,255,0.7));margin:5px;}
+#float_icons a.disabled{filter:brightness(50%);}
+#float_icons a svg{width:2.5rem;height:2.5rem;}
     </style>
   </head>
   <body>
+    <div style="background-color:black;" id="player_container">
     <iframe id="player" allow="fullscreen"></iframe>
-    <div id="controller">
-      <div id="videos_container">
-          <a href="." onclick="ToggleBlightness();return false;" style="font-weight:bold;" id="button_brightness">
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" overflow="visible" enable-background="new 0 0 20 20" xml:space="preserve" width="40" height="40" style="margin:5px;">
-  <line fill="none" stroke="#FFFFFF" stroke-linecap="round" x1="10" y1="10" x2="10" y2="3"/>
-  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" d="M13.535,6.465c1.953,1.952,1.953,5.118,0,7.07 c-1.952,1.953-5.118,1.953-7.07,0c-1.953-1.952-1.953-5.118,0-7.07"/>
-</svg>
-          </a>
-        <a href="." onclick="ToggleRepeat();return false;">
+    </div>
+    <div id="controller_container">
+      <div id="controller">
+        <div id="videos_container">
+          <a href="." onclick="ToggleRepeat();return false;" title="繰り返し">
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 30 30" overflow="visible" enable-background="new 0 0 30 30" xml:space="preserve" width="40" height="40" style="margin:5px;">
   <g id="repeat_svg_g" fill="#888888">
     <polyline points="20.554,6.381 6.381,6.381 6.381,14.177 7.799,14.177 7.799,7.799 20.554,7.799 20.554,9.216 22.68,7.09 20.554,4.964 20.554,6.381"/>
@@ -52,20 +60,52 @@ a {color:white;text-decoration: none;}
   <polyline id="repeat_svg_one" fill="#888888" points="13.468,9.925 12.051,11.342 13.468,11.342 13.468,18.429 14.885,18.429 14.885,9.925 13.468,9.925"/>
 </svg>
           </a>
-          <a href="." onclick="PlayPrevious();return false;" id="button_prev">
+          <a href="." onclick="PlayPrevious();return false;" id="button_prev" title="前へ">
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 28 28" overflow="visible" xml:space="preserve" width="40" height="40" style="margin:5px;transform: scale(-0.8, 0.8);">
   <path fill="white" d="M14.176,1.421C7.131,1.421,1.42,7.132,1.42,14.177s5.711,12.756,12.756,12.756s12.756-5.711,12.756-12.756 S21.221,1.421,14.176,1.421z M20.2,20.313h-1.417v-6.137l-10.63,6.137V8.04l10.63,6.137V8.04H20.2V20.313z"/>
 </svg>
-          <a href="." onclick="PlayNext();return false;" id="button_next">
+          <a href="." onclick="PlayNext();return false;" id="button_next" title="次へ">
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 28 28" overflow="visible" xml:space="preserve" width="40" height="40" style="margin:5px;transform: scale(0.8, 0.8);">
   <path fill="white" d="M14.176,1.421C7.131,1.421,1.42,7.132,1.42,14.177s5.711,12.756,12.756,12.756s12.756-5.711,12.756-12.756 S21.221,1.421,14.176,1.421z M20.2,20.313h-1.417v-6.137l-10.63,6.137V8.04l10.63,6.137V8.04H20.2V20.313z"/>
 </svg>
           </a>
           <p id="title"></p>
-        <div id="videos">
+          <div id="videos">
+          </div>
         </div>
+        <div id="links">
+          <a href=".">Home</a>
+          <a href="tv.html">TV Home</a>
+          <a href="play.html" onclick="OpenVideoPage();return false;">単体ビュワー</a>
+          <a href="https://www.nicovideo.jp/watch/" onclick="OpenVideoPageNicovideo();return false;">公式</a>
+        </div>
+        <div id="comments"></div>
       </div>
-      <div id="comments"></div>
+      <div id="float_icons">
+        <a href="javascript:void(0);" onclick="ScrollToTop();return false;" id="button_scroll_top" title="トップへ">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 720 720" overflow="visible" xml:space="preserve" width="40" height="40"" style="margin:5px;">
+  <line fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" x1="180" y1="180" x2="540" y2="180"/>
+  <line fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" x1="360" y1="540" x2="360" y2="270"/>
+  <polyline fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="500" points="225,405 360,270 495,405 "/>
+</svg>
+        </a>
+        <a href="javascript:void(0);" onclick="ToggleCommentScrollTimer();return false;" id="button_comment_scroll" title="動画に合わせて自動スクロール">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 720 720" overflow="visible" xml:space="preserve" width="40" height="40"" style="margin:5px;">
+  <polygon fill="#FFFFFF" points="216.354,360.354 216.354,504.354 72.354,504.354 360.354,648.354 648.354,504.354 504.354,504.354 504.354,360.354 "/>
+  <g id="scroll_comment_svg_basic" fill="none">
+    <rect x="216.354" y="72.354" width="288" height="108"/>
+    <rect x="216.354" y="216.354" width="288" height="108"/>
+  </g>
+  <polyline id="scroll_comment_svg_disable" fill="#FFFFFF" points="309.442,198.354 234.354,273.443 285.266,324.354 360.354,249.266 435.442,324.354 486.354,273.443 411.266,198.354 486.354,123.266 435.442,72.354 360.354,147.443 285.266,72.354 234.354,123.266 309.442,198.354 "/>
+</svg>
+        </a>
+        <a href="." onclick="ToggleBlightness();return false;" id="button_brightness" title="集中モード">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" overflow="visible" enable-background="new 0 0 20 20" xml:space="preserve" width="40" height="40" style="margin:5px;">
+  <line fill="none" stroke="#FFFFFF" stroke-linecap="round" x1="10" y1="10" x2="10" y2="3"/>
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" d="M13.535,6.465c1.953,1.952,1.953,5.118,0,7.07 c-1.952,1.953-5.118,1.953-7.07,0c-1.953-1.952-1.953-5.118,0-7.07"/>
+</svg>
+        </a>
+      </div>
     </div>
     <script>
 //<![CDATA[
@@ -98,6 +138,8 @@ var ChannelId;
 var Channels;
 var RepeatMode=2;
 var Blightness=true;
+var Comments;
+var CommentScrollTimer;
 
 window.addEventListener("hashchange",function(e){
 SetId();
@@ -108,14 +150,29 @@ function ToggleBlightness(){
   var elem=document.getElementById("controller");
   Blightness=!Blightness;
   if(Blightness){
-    document.getElementById("controller").style.pointerEvents="auto";
+    elem.style.pointerEvents="auto";
     document.getElementById("button_brightness").style.pointerEvents="auto";
+    {
+      let button_scroll=document.getElementById("button_comment_scroll");
+      if(button_scroll.classList.contains("disabled"))button_scroll.classList.remove("disabled");
+    }
+    {
+      let button_scroll=document.getElementById("button_scroll_top");
+      if(button_scroll.classList.contains("disabled"))button_scroll.classList.remove("disabled");
+    }
     elem.style.filter="brightness(100%)";
   }
   else{
-    document.getElementById("controller").style.pointerEvents="none";
+    elem.style.pointerEvents="none";
     document.getElementById("button_brightness").style.pointerEvents="auto";
+    document.getElementById("button_comment_scroll").classList.add("disabled");
+    document.getElementById("button_scroll_top").classList.add("disabled");
     elem.style.filter="brightness(10%)";
+    DisableCommentScrollTimer();
+    document.getElementById("player").scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+      inline: 'start',});
   }
 }
 
@@ -181,12 +238,16 @@ function ShowComments(comments){
   var target=document.getElementById("comments");
   ClearChild(target);
   
+  Comments=comments;
+  
   var iframe=document.getElementById("player");
   var iframed = (iframe.contentWindow || iframe.contentDocument);
-  
-  for(let comment of comments){
+
+  for(let comment_key in comments){
+    let comment=comments[comment_key];
     let div=document.createElement("div");
     div.classList.add("comment");
+    div.id="comment_"+comment_key;
     {
       let elem=document.createElement("p");
       elem.innerText=GetTimespanText(comment.vpos/100.0);
@@ -201,14 +262,75 @@ function ShowComments(comments){
       elem.ondblclick = function(){iframed.SeekToComment(comment);return false;};
       div.appendChild(elem);
     }
+    {
+      let elem=document.createElement("p");
+      elem.innerText="#"+comment.count+" "+comment.date.toLocaleString()+(comment.mail?" "+comment.mail:"");
+      elem.setAttribute("class","info");
+      elem.ondblclick = function(){iframed.SeekToComment(comment);return false;};
+      div.appendChild(elem);
+    }
     target.appendChild(div);
   }
 }
 
+function ScrollToTop(){
+  if(!Blightness)return;
+  DisableCommentScrollTimer();
+  document.getElementById("controller").scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+    inline: 'start',});
+}
+
+function ScrollToCurrent(){
+  if(Comments==null)return;
+  if(!Blightness)return;
+  var iframe=document.getElementById("player");
+  var iframed = (iframe.contentWindow || iframe.contentDocument);
+  var time= iframed.GetCurrentTime();
+  let index=Comments.findIndex(x=>x.vpos>time*100);
+  let elem=document.getElementById("comment_"+index);
+  if(index>0 && elem!=null){
+    elem.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+      inline: 'start',});
+  }
+}
+
+function ToggleCommentScrollTimer(){
+  if(CommentScrollTimer==null){
+    if(!Blightness)return;
+
+    document.getElementById("scroll_comment_svg_basic").setAttribute("fill","white");
+    document.getElementById("scroll_comment_svg_disable").setAttribute("fill","none");
+
+    CommentScrollTimer=setInterval(function(){ScrollToCurrent();},1000);
+  }else{
+    DisableCommentScrollTimer();
+  }
+}
+
+function DisableCommentScrollTimer(){
+  if(CommentScrollTimer!=null){
+    clearTimeout(CommentScrollTimer);
+    CommentScrollTimer=null;
+    
+    document.getElementById("scroll_comment_svg_basic").setAttribute("fill","none");
+    document.getElementById("scroll_comment_svg_disable").setAttribute("fill","white");
+  }
+}
+
+/*
+document.getElementById("controller_container").addEventListener("scroll", function(e){
+  //どうやったらjavascript発火のスクロールとユーザースクロールを区別するんだろう？
+},false);
+*/
+
 function GetTimespanText(sec){
   return (sec>=0?"":"-")+Math.floor(Math.abs(sec)/60)+":"+("00"+(Math.floor(Math.abs(sec))%60)).slice(-2);
 }
-                    
+                  
 function SetHash(channel,video){
   var hash=channel+(video?":"+video:"");
   if(hash!=window.location.hash)window.location.hash=hash;
@@ -218,6 +340,16 @@ function PlayUrl(player){
   var iframe=document.getElementById("player");
   if(iframe.getAttribute("src")!=player)
     iframe.setAttribute("src",player);
+}
+
+function OpenVideoPage(){
+  var video=GetCurrentVideo();
+  if(video) location.href=video.player_url;
+}
+
+function OpenVideoPageNicovideo(){
+  var video=GetCurrentVideo();
+  if(video) location.href="https://www.nicovideo.jp/watch/"+video.id;
 }
 
 function ClearChild(container){
@@ -251,16 +383,8 @@ function Play(count){
   var currentChannel=GetCurrentChannel();
   var repeatFooter=(RepeatMode==2)?":repeat":"";
   if(!currentChannel) return;
-  
-  let targetCount=0
-  if(count<currentChannel.videos.length){
-    targetCount=count;
-  }else if(currentChannel.videos.length>0){
-    targetCount=0;
-  }else{
-    return;
-  }
-  
+  var targetCount=GetActualVideoCount(count);
+  if(targetCount==-1) return;
   VideoCount=targetCount;
   let video=currentChannel.videos[targetCount];
   PlayUrl(video.player_url+repeatFooter);
@@ -268,6 +392,27 @@ function Play(count){
   SetInfo(video);
   ShowChannel();
   return targetCount;
+}
+
+function GetCurrentVideo(){
+  var currentChannel=GetCurrentChannel();
+  if(!currentChannel) return;
+  var count=GetActualVideoCount(VideoCount);
+  if(count == -1) return;
+  return currentChannel.videos[count];
+}
+
+function GetActualVideoCount(count){
+  var currentChannel=GetCurrentChannel();
+  if(!currentChannel) return -1;
+  let targetCount=0
+  if(count<currentChannel.videos.length){
+    return count;
+  }else if(currentChannel.videos.length>0){
+    return 0;
+  }else{
+    return -1;
+  }
 }
 
 function SetInfo(video){
@@ -328,8 +473,12 @@ function SetControllerSize(){
   let v=document.getElementById("player");
   let vh=parseInt(v.style.height);
   let h=window.innerHeight;
-  let c=document.getElementById("controller");
-  c.style.height=(h-vh>h*0.33)?(h-vh-1)+"px":"";
+  let c=document.getElementById("controller_container");
+  if(h-vh>h*0.33){
+    c.style.height=(h-vh-1)+"px";
+  }else{
+    c.style.height="";
+  }
 }
 
 window.addEventListener("message", function(e){
