@@ -58,14 +58,13 @@ password your_pass
 ## Apps
 ### [UWP版クライアント](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
 Windowsで利用できるUWP版のクライアントがあります。
-ただし、コメントの表示には対応していません。
 
 * [ストア](https://www.microsoft.com/store/productId/9PFMPFTFX4W6)
 * [プロジェクトページ](https://github.com/kurema/NicochViewerUWP)
 
 ## Hints
-* 動画一覧は単純にファイルシステムを見て判断しています。
-録画記録をログ以外に保持しているわけではないので、適当な動画やチャンネルを削除しても問題ありません。
+* 動画一覧は単純にファイル構造を見て判断しています。
+録画記録を保持しているわけではないので、適当な動画やチャンネルを削除しても問題ありません。
 ただし、録画予約に残ったままなら再ダウンロードされます。
 * ダウンロードフォルダは容量の大きいパーティションを指定する事をお勧めします。
 minidlna等を設定するのもよいでしょう。

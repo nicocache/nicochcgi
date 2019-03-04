@@ -17,7 +17,7 @@ iframe#player{
 a {color:white;text-decoration: none;}
 #controller_container {overflow-y:auto;position:relative; top:0; left:0;z-index:0;}
 #links {margin:1em;}
-#links a{padding:1em;transition: background-color 0.4s ease;}
+#links a{padding:1em;transition: background-color 0.4s ease;font-weight:bold;}
 #links a:hover{background-color:rgba(255,255,255,0.1);}
 #controller {transition: filter 2s ease;}
 #videos_container {margin:20px;background-color:rgba(255,255,255,0.1);}
@@ -33,7 +33,7 @@ a {color:white;text-decoration: none;}
 #comments{margin:20px;}
 .comment{padding:0.2em 0;transition: background-color 0.4s ease;overflow:hidden;display: grid;grid-template-columns: 2.5em 1fr;grid-template-rows:min-content min-content;margin:0.1em 0;}
 .comment:hover{background-color:rgba(255,255,255,0.1);}
-.comment p{display: flex;align-self: center;margin:00;}
+.comment p{display: flex;align-self: center;margin:00;font-size:0.8em;}
 .comment p.time{text-align:center;grid-column:1;grid-row: 1 / 3;}
 .comment p.text, .comment p.info{grid-column:2;padding-left:1rem;}
 .comment p.text{grid-row:1;}
@@ -90,7 +90,7 @@ a {color:white;text-decoration: none;}
 </svg>
         </a>
         <a href="javascript:void(0);" onclick="ToggleCommentScrollTimer();return false;" id="button_comment_scroll" title="動画に合わせて自動スクロール">
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 720 720" overflow="visible" xml:space="preserve" width="40" height="40"" style="margin:5px;">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 720 720" overflow="visible" xml:space="preserve" width="40" height="40"" style="margin:5px;transform: scale(0.8, 0.8);">
   <polygon fill="#FFFFFF" points="216.354,360.354 216.354,504.354 72.354,504.354 360.354,648.354 648.354,504.354 504.354,504.354 504.354,360.354 "/>
   <g id="scroll_comment_svg_basic" fill="none">
     <rect x="216.354" y="72.354" width="288" height="108"/>
@@ -289,6 +289,7 @@ function ScrollToCurrent(){
   var iframed = (iframe.contentWindow || iframe.contentDocument);
   var time= iframed.GetCurrentTime();
   let index=Comments.findIndex(x=>x.vpos>time*100);
+  if(index==-1)index=Comments.length-1;
   let elem=document.getElementById("comment_"+index);
   if(index>0 && elem!=null){
     elem.scrollIntoView({

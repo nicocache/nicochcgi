@@ -44,21 +44,21 @@ $q->charset('utf-8');
 $message=$q->escapeHTML($message);
 $message=~ s/\n/<br \/>/g;
 
-print "  <div id='content'>";
-print "  <p id='message'>";
+print "  <div id='content'>\n";
+print "  <p id='message'>\n";
 print $message;
-print "  </p>";
+print "  </p>\n";
 if($result[2] eq "password_wrong" || $result[2] eq "password_required"){
  print "  <form class='auth' action='modify.cgi' method='post' />\n";
  print "   <input type='password' name='password' />\n";
  print "   <input type='hidden' name='op' value='".$q->escapeHTML($q->param('op'))."' />\n";
  print "   <input type='hidden' name='a1' value='".$q->escapeHTML($q->param('a1'))."' />\n";
  print "   <input type='submit' value='実行' />\n";
- print "  </form>";
+ print "  </form>\n";
 }
 print " <p><a href='.'>ページトップ</a></p>\n";
 print " <p><a href='".$ENV{'HTTP_REFERER'}."'>前のページ</a></p>\n";
-print " </div>";
+print " </div>\n";
 print " </body>\n</html>\n";
 
 sub Operate{
