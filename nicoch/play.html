@@ -131,7 +131,7 @@
       var CommentTimer;
       var ChannelId;
       var MovieId;
-      var CommentDuration=500;//コメントが表示される時間を変更するにはここを変更。10msec単位。
+      var CommentDuration=400;//コメントが表示される時間を変更するにはここを変更。10msec単位。
       var OriginalCoord;
       var Fps=localStorage.getItem("niconico_comment_Fps")?parseFloat(localStorage.getItem("niconico_comment_Fps")):30;
       var CommentSource="";
@@ -599,7 +599,7 @@
         return true;
       }
       function GetActualVpos(vpos,duration,cmDuration){
-        return Math.min(vpos,duration*100-cmDuration*0.5);
+        return Math.max(Math.min(vpos-100,duration*100-cmDuration*0.5),0);
       }
       function DrawComment(){
         let canvas1=document.getElementsByTagName("canvas")[0];
@@ -644,10 +644,10 @@
         for(let i=0;i<Comments.length;i++){
           let comment=Comments[i];
           comment.lastDisplayed=0;
-          let commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'     ');
+          let commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'　　 ');
           let commentLines=commentText.split('\n');
           let cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
-          if(time * 100-cmDuration<cvpos && cvpos < time *100 +cmDuration*0){
+          if(time * 100-cmDuration*1<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
 
             //enderの場合は基本コメントアートなのでオリジナルのフォントサイズを尊重(基本は小さめ)。
@@ -703,6 +703,7 @@
               }
               if(height*commentLines.length*heightScale>canvas1.height){
                 r.y=0;
+                heightScale/=height*commentLines.length*heightScale/canvas1.height;
               }
               }
               comment.lastY=r.y/canvas1.width;
@@ -743,6 +744,7 @@
               }
               if(height*commentLines.length*heightScale>canvas1.height){
                 r.y=0;
+                heightScale/=height*commentLines.length*heightScale/canvas1.height;
               }
               }
               comment.lastY=r.y/canvas1.width;
@@ -775,7 +777,16 @@ context1.stroke();
               if(r.y>modnum){overflow=true;r.y=r.y%modnum;}
               r.y+=height/2.0;
               r.y=Math.max(r.y,height*heightScale/2.0);
-              operatedComments.push(comment);
+              /*
+              if(height*commentLines.length*heightScale>canvas1.height){
+                heightScale/=height*commentLines.length*heightScale/canvas1.height;
+              }
+              */
+              if(height*commentLines.length*heightScale+r.y>canvas1.height){
+                r.y=height/2.0;
+              }else{
+                operatedComments.push(comment);
+              }
               context1.textBaseline="middle";
               comment.lastYReal=(r.y-height*heightScale/2.0)/canvas1.width;
 //context1.rect(r.x,r.y,comment.width,height);
