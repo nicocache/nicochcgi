@@ -23,8 +23,6 @@ my $login_info = {
 
 my $q=new CGI;
 my $movie_id=$q->param('id');
-#my $movie_id="1545719883";
-#my $movie_id="1551751082";
 
 my $ua = LWP::UserAgent->new(cookie_jar => {});
 $ua->post("https://secure.nicovideo.jp/secure/login?site=niconico", $login_info);
@@ -35,14 +33,6 @@ my $info_json = scraper {
 }->scrape($info_res->content)->{json};
 $info_json = unescape($info_json);
 $info = decode_json( $info_json );
-
-#use YAML;
-#print Dump $info->{commentComposite}->{threads};
-#print Dump $info;
-#print $info->{video}->{dmcInfo}->{user}->{user_id};
-#print $info->{commentComposite}->{threads}[0]->{isActive} == 0;
-#print "\n";
-#exit;
 
 my $ms= $info->{thread}->{serverUrl};
 my $user_id= $info->{video}->{dmcInfo}->{user}->{user_id};
@@ -76,6 +66,7 @@ my $req=HTTP::Request->new(POST => $ms);
 $req->content($post_msg);
 print $ua->request($req)->content;
 }else{
+#ユーザー動画
 my $post_msg="<thread thread=\"$thread_id\" version=\"20061206\" res_from=\"-1000\" user_id=\"$user_id\" />";
 my $req=HTTP::Request->new(POST => $ms);
 $req->content($post_msg);
