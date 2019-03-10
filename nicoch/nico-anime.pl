@@ -54,8 +54,8 @@ foreach my $url (@url) {
     };
     sleep(1);
     if($@){
-      warn "ERROR: $@\n";
-      next;
+        warn "ERROR: $@\n";
+        next;
     }
 
     my ($chid) = $url =~ m!/([^/]+?)/?$!;
@@ -72,8 +72,8 @@ foreach my $url (@url) {
         
         #my $ext = $info->{video}->{movieType};
         my $info = GetInfo($client->user_agent,$video_id,$chid);
-
         sleep(1);
+
         my $title;
         my $getthumbinfo_res;
         if(defined($info)){
@@ -100,69 +100,23 @@ foreach my $url (@url) {
         print "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
-          my $vurl;
-          if(defined($info)){
-            $vurl = $info->{video}->{smileInfo}->{url};
-            if ($vurl=~ /low$/){die "low quality";}
-            if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
-            my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
-            if(defined($json_dsr)){
-              print "Access via api.dmc.nico\n";
-              $vurl = $json_dsr->{data}->{session}->{content_uri};
-            }
-          }else{
-            $vurl= $client->prepare_download($video_id);
-          }
-          if ($vurl=~ /low$/){die "low quality";}
-          my $dl_error="";
-          my $dl_size=-1;
-          my $dl_downloaded=0;
-
-          my $downloder = sub {
-              my ($data, $res, $proto) = @_;
-              $dl_size=0+$res->headers->header('Content-Length') if defined $res->headers->header('Content-Length');
-              die $dl_error="failed" if !$res->is_success;
-              die $dl_error="aborted" if defined $res->headers->header('Client-Aborted');
-              die $dl_error="died: ".$res->headers->header("X-Died") if defined $res->header("X-Died");
-              $dl_downloaded+=length $data;
-              print {$fh} $data;
-              };
-
-          {
-            my $request=HTTP::Request->new( GET => $vurl );
-            my $res2=$client->user_agent->request( $request, $downloder);
-            die "Failed: ".$res2->status_line if $res2->is_error;
-          }
+          my ($dl_size, $dl_downloaded) = DownloadVideo($info,$video_id,$chid,$client,0,$fh);
           
-          if($dl_error ne ""){unlink $filetmp; die $dl_error;}
           if($dl_downloaded!=$dl_size && $dl_size != -1){
             my $dl_size_org=$dl_size;
             my $i=0;
-            my $max_retry_count=3;
+            my $max_retry_count=5;
             while($i<$max_retry_count && $dl_downloaded!=$dl_size_org){
               $i++;
               print $dl_downloaded."B / ".$dl_size_org."B downloaded. Continue.\n";
               sleep 30;
+              
               $info = GetInfo($client->user_agent,$video_id,$chid);
               sleep(1);
-              my $vurl;
-              if(defined($info)){
-                $vurl = $info->{video}->{smileInfo}->{url};
-                if ($vurl=~ /low$/){die "low quality";}
-                if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
-                my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
-                if(defined($json_dsr)){
-                  $vurl = $json_dsr->{data}->{session}->{content_uri};
-                }
-              }else{
-                $vurl= $client->prepare_download($video_id);
-              }
-              if ($vurl=~ /low$/){die "low quality";}
-              my $request=HTTP::Request->new( GET => $vurl );
-              $request->header(Range=>"bytes=".($dl_downloaded)."-");
-              my $res2=$client->user_agent->request( $request, $downloder);
-              die "Failed: ".$res2->status_line if $res2->is_error;
-              if($dl_error ne ""){unlink $filetmp; die $dl_error;}
+              
+              my ($dl_size_left, $dl_downloaded_current) = DownloadVideo($info,$video_id,$chid,$client,$dl_downloaded,$fh);
+              if ($dl_size_left+$dl_downloaded!=$dl_size){die "Content-Length missmatch: ".($dl_size_left+$dl_downloaded)." : ".($dl_size);}
+              $dl_downloaded += $dl_downloaded_current;
             }
           
             if($dl_downloaded!=$dl_size_org){
@@ -187,14 +141,20 @@ print "Time: ".time."\nDone\n";
 sub DownloadVideo{
   my ($info,$video_id,$chid,$client,$range_from,$fh)=@_;
   
-  $info = GetInfo($client->user_agent,$video_id,$chid) if ! defined($info);
+  if(! defined($info)){
+    $info = GetInfo($client->user_agent,$video_id,$chid);
+    sleep(1);
+  }
 
   my $vurl;
+  my $session_uri;
+  my $last_ping=time;
+  my $json_dsr;
   if(defined($info)){
     $vurl = $info->{video}->{smileInfo}->{url};
     if ($vurl=~ /low$/){die "low quality";}
     if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
-    my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
+    ($json_dsr,$session_uri) = GetHtml5VideoJson($info, $client->user_agent);
     if(defined($json_dsr)){
       print "Access via api.dmc.nico\n";
       $vurl = $json_dsr->{data}->{session}->{content_uri};
@@ -206,6 +166,11 @@ sub DownloadVideo{
   my $dl_error="";
   my $dl_size=-1;
   my $dl_downloaded=0;
+  
+  my $ping_content;
+  if(defined($json_dsr)){
+    $ping_content=encode_json({session => $json_dsr->{data}->{session}});
+  }
 
   my $downloder = sub {
     my ($data, $res, $proto) = @_;
@@ -215,6 +180,19 @@ sub DownloadVideo{
     die $dl_error="died: ".$res->headers->header("X-Died") if defined $res->header("X-Died");
     $dl_downloaded+=length $data;
     print {$fh} $data;
+
+    if(defined($session_uri) && time-$last_ping>40){
+      my $ping_uri=$session_uri."/".$json_dsr->{data}->{session}->{id}."?_format=json&_method=PUT";
+      #print "ping\n";
+      
+      my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
+      $request_option->content($ping_content);
+      $client->user_agent->request($request_option);
+      
+      $client->user_agent->post($ping_uri, Content => $ping_content);
+      
+      $last_ping = time;
+    }
     };
 
   {
@@ -224,6 +202,8 @@ sub DownloadVideo{
     die "Failed: ".$res2->status_line if $res2->is_error;
   }
   
+  if($dl_error ne ""){die $dl_error;}
+
   return ($dl_size,$dl_downloaded);
 }
 
@@ -236,12 +216,12 @@ sub GetInfo{
       process 'div#js-initial-watch-data', 'json' => '@data-api-data';
     }->scrape($info_res->content)->{json};
     if(! defined($info_json) || ! defined($info_res->content) || $info_json eq "" ){return;}
-    $info_json = unescape($info_json);
+    #$info_json = unescape($info_json);
     $info = decode_json( $info_json );
   };
   if($@ || ! defined($info)){
-    warn "Channel:$chid Id:$video_id\n";
-    warn "ERROR: $@\n";
+    warn "GetInfo failed. Channel:$chid Id:$video_id\n";
+    warn "ERROR: $@\n" if($@);
     return;
   }
   return $info;
@@ -254,7 +234,7 @@ sub GetHtml5VideoJson{
   my $dsr = GetDmcSessionRequest($info);
   my $res = $ua->post($url."?_format=json", Content => $dsr);
   my $json = decode_json($res->content);
-  return $json;
+  return ($json,$url);
 }
 
 sub EscapeJson{
@@ -308,8 +288,8 @@ join('", "',@{$info->{video}->{dmcInfo}->{session_api}->{audios}})
         "http_parameters": {
           "parameters": {
             "http_output_download_parameters": {
-              "use_well_known_port": "yes",
-              "use_ssl": "yes",
+              "use_well_known_port": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_well_known_port}==1?"yes":"no"]}",
+              "use_ssl": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_ssl}==1?"yes":"no"]}",
               "transfer_preset": ""
             }
           }
