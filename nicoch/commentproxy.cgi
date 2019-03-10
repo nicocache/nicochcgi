@@ -35,43 +35,41 @@ $info_json = unescape($info_json);
 $info = decode_json( $info_json );
 
 my $ms= $info->{thread}->{serverUrl};
-my $user_id= $info->{video}->{dmcInfo}->{user}->{user_id};
+#my $user_id= $info->{video}->{dmcInfo}->{user}->{user_id};
+my $user_id= $info->{viewer}->{id};
 my $length= $info->{video}->{duration};
 my $threads = $info->{commentComposite}->{threads};
-my $thread_id = @$threads[0]->{id};
+
+#use YAML;
+#print Dump $info;
+
+my $min=int($length/60)+1;
+my $post_msg="<packet>\n";
 
 foreach my $thread (@$threads){
   if($thread->{isActive} == 1){
-    $thread_id=$thread->{id};
+    my $thread_id = $thread->{id};
+    if($thread->{isThreadkeyRequired} == 1){
+      my $thread_key_res=$ua->get("http://flapi.nicovideo.jp/api/getthreadkey?thread=".$thread->{id});
+
+      my $thread_key = ParseUrl($thread_key_res->content,"threadkey");
+      my $force_184 = ParseUrl($thread_key_res->content,"force_184");
+      
+      $post_msg.=<<"PACKET"
+ <thread thread="$thread_id" version="20090904" threadkey="$thread_key" force_184="$force_184" user_id="$user_id" />
+ <thread_leaves scores="1" thread="$thread_id" threadkey="$thread_key" force_184="$force_184" user_id="$user_id">0-$min:100,1000</thread_leaves>
+PACKET
+    }else{
+      $post_msg.="<thread thread=\"$thread_id\" version=\"20061206\" res_from=\"-1000\" user_id=\"$user_id\" />\n";
+    }
   }
 }
 
-if($info->{commentComposite}->{threads}[0]->{isActive} == 0){
-  #チャンネル動画
-  my $thread_key_res=$ua->get("http://flapi.nicovideo.jp/api/getthreadkey?thread=".$thread_id);
-  
-  my $thread_key= ParseUrl($thread_key_res->content,"threadkey");
-  my $force_184= ParseUrl($thread_key_res->content,"force_184");
-  
-  my $min=int($length/60)+1;
-  
-  my $post_msg=<<"PACKET";
-<packet>
- <thread thread="$thread_id" version="20090904" threadkey="$thread_key" force_184="$force_184" user_id="$user_id" />
- <thread_leaves scores="1" thread="$thread_id" threadkey="$thread_key" force_184="$force_184" user_id="$user_id">0-$min:100,1000</thread_leaves>
-</packet>
-PACKET
+$post_msg.="</thread>\n";
 
-  my $req=HTTP::Request->new(POST => $ms);
-  $req->content($post_msg);
-  print $ua->request($req)->content;
-}else{
-  #ユーザー動画
-  my $post_msg="<thread thread=\"$thread_id\" version=\"20061206\" res_from=\"-1000\" user_id=\"$user_id\" />";
-  my $req=HTTP::Request->new(POST => $ms);
-  $req->content($post_msg);
-  print $ua->request($req)->content;
-}
+my $req=HTTP::Request->new(POST => $ms);
+$req->content($post_msg);
+print $ua->request($req)->content;
 
 sub ParseUrl{
   my $text=$_[0];

@@ -150,7 +150,7 @@ sub DownloadVideo{
   my $session_uri;
   my $last_ping=time;
   my $json_dsr;
-  if(defined($info)){
+  if(defined($info) && defined($info->{video}->{dmcInfo}->{quality}->{videos}) && defined($info->{video}->{dmcInfo}->{session_api}->{videos})){
     $vurl = $info->{video}->{smileInfo}->{url};
     if ($vurl=~ /low$/){die "low quality";}
     if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
