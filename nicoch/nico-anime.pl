@@ -70,12 +70,19 @@ foreach my $url (@url) {
         my @testfile=glob("\"".File::Spec->catfile($chdir , "$video_id.*.$ext")."\"" );
         next if @testfile+0 >0;
         
-        #my $res = $client->user_agent->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
-        
         #my $ext = $info->{video}->{movieType};
-        my $info = GetInfo($client,$video_id,$chid);
+        my $info = GetInfo($client->user_agent,$video_id,$chid);
+
         sleep(1);
-        my $title = $info->{video}->{title};
+        my $title;
+        my $getthumbinfo_res;
+        if(defined($info)){
+          $title = $info->{video}->{title};
+        }else{
+          $getthumbinfo_res = $client->user_agent->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
+          $title = XMLin($getthumbinfo_res->content)->{thumb}{title};
+          $ext = XMLin($getthumbinfo_res->content)->{thumb}{movie_type};
+        }
 
         $title=~ s/[\/\\\:\,\;\*\?\"\<\>\|]//g;
 
@@ -93,12 +100,23 @@ foreach my $url (@url) {
         print "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
-          #my $vurl= $client->prepare_download($video_id);
-          my $vurl= $info->{video}->{smileInfo}->{url};
+          my $vurl;
+          if(defined($info)){
+            $vurl = $info->{video}->{smileInfo}->{url};
+            if ($vurl=~ /low$/){die "low quality";}
+            if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
+            my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
+            if(defined($json_dsr)){
+              print "Access via api.dmc.nico\n";
+              $vurl = $json_dsr->{data}->{session}->{content_uri};
+            }
+          }else{
+            $vurl= $client->prepare_download($video_id);
+          }
+          if ($vurl=~ /low$/){die "low quality";}
           my $dl_error="";
           my $dl_size=-1;
           my $dl_downloaded=0;
-          if ($vurl=~ /low$/){die "low quality";}
 
           my $downloder = sub {
               my ($data, $res, $proto) = @_;
@@ -110,7 +128,6 @@ foreach my $url (@url) {
               print {$fh} $data;
               };
 
-          #$client->download($video_id, $downloder);
           {
             my $request=HTTP::Request->new( GET => $vurl );
             my $res2=$client->user_agent->request( $request, $downloder);
@@ -126,11 +143,22 @@ foreach my $url (@url) {
               $i++;
               print $dl_downloaded."B / ".$dl_size_org."B downloaded. Continue.\n";
               sleep 30;
-              $info = GetInfo($client,$video_id,$chid);
+              $info = GetInfo($client->user_agent,$video_id,$chid);
               sleep(1);
-              my $vurl2= $info->{video}->{smileInfo}->{url};
-              if ($vurl2=~ /low$/){die "low quality";}
-              my $request=HTTP::Request->new( GET => $vurl2 );
+              my $vurl;
+              if(defined($info)){
+                $vurl = $info->{video}->{smileInfo}->{url};
+                if ($vurl=~ /low$/){die "low quality";}
+                if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
+                my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
+                if(defined($json_dsr)){
+                  $vurl = $json_dsr->{data}->{session}->{content_uri};
+                }
+              }else{
+                $vurl= $client->prepare_download($video_id);
+              }
+              if ($vurl=~ /low$/){die "low quality";}
+              my $request=HTTP::Request->new( GET => $vurl );
               $request->header(Range=>"bytes=".($dl_downloaded)."-");
               my $res2=$client->user_agent->request( $request, $downloder);
               die "Failed: ".$res2->status_line if $res2->is_error;
@@ -156,14 +184,58 @@ foreach my $url (@url) {
 
 print "Time: ".time."\nDone\n";
 
+sub DownloadVideo{
+  my ($info,$video_id,$chid,$client,$range_from,$fh)=@_;
+  
+  $info = GetInfo($client->user_agent,$video_id,$chid) if ! defined($info);
+
+  my $vurl;
+  if(defined($info)){
+    $vurl = $info->{video}->{smileInfo}->{url};
+    if ($vurl=~ /low$/){die "low quality";}
+    if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
+    my $json_dsr = GetHtml5VideoJson($info, $client->user_agent);
+    if(defined($json_dsr)){
+      print "Access via api.dmc.nico\n";
+      $vurl = $json_dsr->{data}->{session}->{content_uri};
+    }
+  }else{
+    $vurl= $client->prepare_download($video_id);
+  }
+  if ($vurl=~ /low$/){die "low quality";}
+  my $dl_error="";
+  my $dl_size=-1;
+  my $dl_downloaded=0;
+
+  my $downloder = sub {
+    my ($data, $res, $proto) = @_;
+    $dl_size=0+$res->headers->header('Content-Length') if defined $res->headers->header('Content-Length');
+    die $dl_error="failed" if !$res->is_success;
+    die $dl_error="aborted" if defined $res->headers->header('Client-Aborted');
+    die $dl_error="died: ".$res->headers->header("X-Died") if defined $res->header("X-Died");
+    $dl_downloaded+=length $data;
+    print {$fh} $data;
+    };
+
+  {
+    my $request=HTTP::Request->new( GET => $vurl );
+    $request->header(Range=>"bytes=".($range_from)."-");
+    my $res2=$client->user_agent->request( $request, $downloder);
+    die "Failed: ".$res2->status_line if $res2->is_error;
+  }
+  
+  return ($dl_size,$dl_downloaded);
+}
+
 sub GetInfo{
   my $info;
-  my ($client,$video_id,$chid)=@_;
+  my ($ua,$video_id,$chid)=@_;
   eval{
-    my $info_res = $client->user_agent->get("https://www.nicovideo.jp/watch/".$video_id);
+    my $info_res = $ua->get("https://www.nicovideo.jp/watch/".$video_id);
     my $info_json = scraper {
       process 'div#js-initial-watch-data', 'json' => '@data-api-data';
     }->scrape($info_res->content)->{json};
+    if(! defined($info_json) || ! defined($info_res->content) || $info_json eq "" ){return;}
     $info_json = unescape($info_json);
     $info = decode_json( $info_json );
   };
@@ -173,4 +245,95 @@ sub GetInfo{
     return;
   }
   return $info;
+}
+
+sub GetHtml5VideoJson{
+  my ($info,$ua) = @_;
+  if(!defined($info->{video}->{dmcInfo}->{session_api})){return;}
+  my $url=$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{url};
+  my $dsr = GetDmcSessionRequest($info);
+  my $res = $ua->post($url."?_format=json", Content => $dsr);
+  my $json = decode_json($res->content);
+  return $json;
+}
+
+sub EscapeJson{
+  my ($data) = @_;
+  if(! defined($data)){return "";}
+  $data =~ s/\\/\\\\/g;
+  $data =~ s/\"/\\\"/g;
+  $data =~ s/\n/\\n/g;
+  $data =~ s/\r/\\r/g;
+  $data =~ s/\t/\\t/g;
+  return $data;
+}
+
+sub GetDmcSessionRequest{
+  my ($info) = @_;
+  return <<"EOF";
+{
+  "session": {
+    "recipe_id": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{recipe_id}) ]}",
+    "content_id": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{content_id}) ]}",
+    "content_type": "movie",
+    "content_src_id_sets": [
+      {
+        "content_src_ids": [
+          {
+            "src_id_to_mux": {
+              "video_src_ids": [
+                "@{[ 
+join('", "',@{$info->{video}->{dmcInfo}->{session_api}->{videos}})
+]}"
+              ],
+              "audio_src_ids": [
+                "@{[
+join('", "',@{$info->{video}->{dmcInfo}->{session_api}->{audios}})
+]}"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "timing_constraint": "unlimited",
+    "keep_method": {
+      "heartbeat": {
+        "lifetime": 120000
+      }
+    },
+    "protocol": {
+      "name": "http",
+      "parameters": {
+        "http_parameters": {
+          "parameters": {
+            "http_output_download_parameters": {
+              "use_well_known_port": "yes",
+              "use_ssl": "yes",
+              "transfer_preset": ""
+            }
+          }
+        }
+      }
+    },
+    "content_uri": "",
+    "session_operation_auth": {
+      "session_operation_auth_by_signature": {
+        "token": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{token}) ]}",
+        "signature": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{signature}) ]}"
+      }
+    },
+    "content_auth": {
+      "auth_type": "ht2",
+      "content_key_timeout" : @{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{content_key_timeout}) ]},
+      "service_id": "nicovideo",
+      "service_user_id": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{service_user_id}) ]}"
+    },
+    "client_info": {
+      "player_id": "@{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{player_id}) ]}"
+    },
+    "priority": @{[ EscapeJson($info->{video}->{dmcInfo}->{session_api}->{priority}) ]}
+  }
+}
+EOF
 }
