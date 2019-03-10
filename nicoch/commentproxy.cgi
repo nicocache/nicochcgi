@@ -40,9 +40,6 @@ my $user_id= $info->{viewer}->{id};
 my $length= $info->{video}->{duration};
 my $threads = $info->{commentComposite}->{threads};
 
-#use YAML;
-#print Dump $info;
-
 my $min=int($length/60)+1;
 my $post_msg="<packet>\n";
 
@@ -65,7 +62,7 @@ PACKET
   }
 }
 
-$post_msg.="</thread>\n";
+$post_msg.="</packet>\n";
 
 my $req=HTTP::Request->new(POST => $ms);
 $req->content($post_msg);
