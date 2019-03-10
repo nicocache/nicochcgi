@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
 use File::Basename;
@@ -8,6 +9,10 @@ use WWW::NicoVideo::Download;
 use Web::Scraper;
 use XML::Simple;
 use Net::Netrc;
+
+use URI::Escape;
+use Unicode::Escape qw(escape unescape);
+use JSON;
 
 require File::Spec->catfile(dirname(__FILE__),"common.pl");
 
@@ -36,7 +41,6 @@ my @url = GetChannels();
 my $animedir=$conf{"dlhome"};
 #my $animedir=dirname(__FILE__)
 
-my $ua = LWP::UserAgent->new();
 foreach my $url (@url) {
     my $video;
     my $video2;
@@ -54,14 +58,24 @@ foreach my $url (@url) {
       next;
     }
 
+    my ($chid) = $url =~ m!/([^/]+?)/?$!;
+    my $chdir=File::Spec->catfile($animedir , $chid );
+    if(! -d $chdir){mkdir $chdir;}
+
     foreach my $surl (@{$video->{url}},@{$video2->{url}}){
         my ($video_id) = $surl =~ m!/watch/(\w+)!;
-        my $res = $ua->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
-        my $ext = XMLin($res->content)->{thumb}{movie_type};
-        my $title = XMLin($res->content)->{thumb}{title};
-        my ($chid) = $url =~ m!/([^/]+?)/?$!;
-        my $chdir=File::Spec->catfile($animedir , $chid );
-        if(! -d $chdir){mkdir $chdir;}
+
+        my $ext = "mp4";
+
+        my @testfile=glob("\"".File::Spec->catfile($chdir , "$video_id.*.$ext")."\"" );
+        next if @testfile+0 >0;
+        
+        #my $res = $client->user_agent->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
+        
+        #my $ext = $info->{video}->{movieType};
+        my $info = GetInfo($client,$video_id,$chid);
+        sleep(1);
+        my $title = $info->{video}->{title};
 
         $title=~ s/[\/\\\:\,\;\*\?\"\<\>\|]//g;
 
@@ -70,8 +84,6 @@ foreach my $url (@url) {
         my $filetmp = File::Spec->catfile($chdir , "tmp.$ext");
         unlink $filetmp if -e $filetmp;
         next if -e $file;
-        my @testfile=glob("\"".File::Spec->catfile($chdir , "$video_id.*.$ext")."\"" );
-        next if @testfile+0 >0;
 
         if(-e $fileold ) {
             rename $fileold,$file;
@@ -81,7 +93,8 @@ foreach my $url (@url) {
         print "download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
-          my $vurl= $client->prepare_download($video_id);
+          #my $vurl= $client->prepare_download($video_id);
+          my $vurl= $info->{video}->{smileInfo}->{url};
           my $dl_error="";
           my $dl_size=-1;
           my $dl_downloaded=0;
@@ -97,7 +110,13 @@ foreach my $url (@url) {
               print {$fh} $data;
               };
 
-          $client->download($video_id, $downloder);
+          #$client->download($video_id, $downloder);
+          {
+            my $request=HTTP::Request->new( GET => $vurl );
+            my $res2=$client->user_agent->request( $request, $downloder);
+            die "Failed: ".$res2->status_line if $res2->is_error;
+          }
+          
           if($dl_error ne ""){unlink $filetmp; die $dl_error;}
           if($dl_downloaded!=$dl_size && $dl_size != -1){
             my $dl_size_org=$dl_size;
@@ -107,7 +126,9 @@ foreach my $url (@url) {
               $i++;
               print $dl_downloaded."B / ".$dl_size_org."B downloaded. Continue.\n";
               sleep 30;
-              my $vurl2= $client->prepare_download($video_id);
+              $info = GetInfo($client,$video_id,$chid);
+              sleep(1);
+              my $vurl2= $info->{video}->{smileInfo}->{url};
               if ($vurl2=~ /low$/){die "low quality";}
               my $request=HTTP::Request->new( GET => $vurl2 );
               $request->header(Range=>"bytes=".($dl_downloaded)."-");
@@ -134,3 +155,22 @@ foreach my $url (@url) {
 }
 
 print "Time: ".time."\nDone\n";
+
+sub GetInfo{
+  my $info;
+  my ($client,$video_id,$chid)=@_;
+  eval{
+    my $info_res = $client->user_agent->get("https://www.nicovideo.jp/watch/".$video_id);
+    my $info_json = scraper {
+      process 'div#js-initial-watch-data', 'json' => '@data-api-data';
+    }->scrape($info_res->content)->{json};
+    $info_json = unescape($info_json);
+    $info = decode_json( $info_json );
+  };
+  if($@ || ! defined($info)){
+    warn "Channel:$chid Id:$video_id\n";
+    warn "ERROR: $@\n";
+    return;
+  }
+  return $info;
+}
