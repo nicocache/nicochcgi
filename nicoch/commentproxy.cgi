@@ -36,8 +36,9 @@ $info = decode_json( $info_json );
 
 my $ms= $info->{thread}->{serverUrl};
 #my $user_id= $info->{video}->{dmcInfo}->{user}->{user_id};
-my $user_id= $info->{viewer}->{id};
-my $length= $info->{video}->{duration};
+my $user_id = $info->{viewer}->{id};
+my $user_key = $info->{context}->{userkey};
+my $length = $info->{video}->{duration};
 my $threads = $info->{commentComposite}->{threads};
 
 my $min=int($length/60)+1;
@@ -57,7 +58,10 @@ foreach my $thread (@$threads){
  <thread_leaves scores="1" thread="$thread_id" threadkey="$thread_key" force_184="$force_184" user_id="$user_id">0-$min:100,1000</thread_leaves>
 PACKET
     }else{
-      $post_msg.="<thread thread=\"$thread_id\" version=\"20061206\" res_from=\"-1000\" user_id=\"$user_id\" />\n";
+      $post_msg.=" <thread thread=\"$thread_id\" version=\"20061206\" res_from=\"-1000\" user_id=\"$user_id\" userkey=\"$user_key\" />\n";
+      if($thread->{isLeafRequired} == 1){
+        $post_msg.=" <thread_leaves scores=\"1\" thread=\"$thread_id\" user_id=\"$user_id\" userkey=\"$user_key\">0-$min:100,1000</thread_leaves>\n";
+      }
     }
   }
 }
