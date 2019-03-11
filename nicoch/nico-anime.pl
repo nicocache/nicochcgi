@@ -11,8 +11,10 @@ use XML::Simple;
 use Net::Netrc;
 
 use URI::Escape;
-use Unicode::Escape qw(escape unescape);
+#use Unicode::Escape qw(escape unescape);
 use JSON;
+
+use File::Path;
 
 require File::Spec->catfile(dirname(__FILE__),"common.pl");
 
@@ -82,6 +84,9 @@ foreach my $url (@url) {
           $getthumbinfo_res = $client->user_agent->get("http://ext.nicovideo.jp/api/getthumbinfo/$video_id");
           $title = XMLin($getthumbinfo_res->content)->{thumb}{title};
           $ext = XMLin($getthumbinfo_res->content)->{thumb}{movie_type};
+          
+          my @testfile2=glob("\"".File::Spec->catfile($chdir , "$video_id.*.$ext")."\"" );
+          next if @testfile2+0 >0;
         }
 
         $title=~ s/[\/\\\:\,\;\*\?\"\<\>\|]//g;
@@ -97,10 +102,14 @@ foreach my $url (@url) {
             next;
         }
 
-        print "download $file\n";
+        print "Download $file\n";
         open my $fh, '>', $filetmp or die $!;
         eval {
-          my ($dl_size, $dl_downloaded) = DownloadVideo($info,$video_id,$chid,$client,0,$fh);
+          my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir);
+          if($is_hls){
+            unlink $filetmp;
+            return;
+          }
           
           if($dl_downloaded!=$dl_size && $dl_size != -1){
             my $dl_size_org=$dl_size;
@@ -124,7 +133,9 @@ foreach my $url (@url) {
               die "Only ".$dl_downloaded."B / ".$dl_size_org."B downloaded.";
             }
           }
-          if(-s $filetmp == 0){unlink $filetmp;}
+          if($dl_downloaded == 0){
+            die "Downloaded file empty.";
+          }
           else{rename $filetmp,$file;}
         };
         sleep 10;
@@ -139,7 +150,7 @@ foreach my $url (@url) {
 print "Time: ".time."\nDone\n";
 
 sub DownloadVideo{
-  my ($info,$video_id,$chid,$client,$range_from,$fh)=@_;
+  my ($info,$video_id,$chid,$client,$range_from,$fh,$working_dir)=@_;
   
   if(! defined($info)){
     $info = GetInfo($client->user_agent,$video_id,$chid);
@@ -148,30 +159,141 @@ sub DownloadVideo{
 
   my $vurl;
   my $session_uri;
-  my $last_ping=time;
   my $json_dsr;
+  my $is_hls=0;
   if(defined($info) && defined($info->{video}->{dmcInfo}->{quality}->{videos}) && defined($info->{video}->{dmcInfo}->{session_api}->{videos})){
     $vurl = $info->{video}->{smileInfo}->{url};
     if ($vurl=~ /low$/){die "low quality";}
     if (@{$info->{video}->{dmcInfo}->{quality}->{videos}}+0 != @{$info->{video}->{dmcInfo}->{session_api}->{videos}}+0){die "low quality";}
     ($json_dsr,$session_uri) = GetHtml5VideoJson($info, $client->user_agent);
-    if(defined($json_dsr)){
+    if(defined($json_dsr) && defined($json_dsr->{data}->{session}->{content_uri})){
       print "Access via api.dmc.nico\n";
+      if(defined($info->{video}->{dmcInfo}->{encryption})){
+        $is_hls=1;
+        print "Using HLS encrypted connection.\n";
+      }
       $vurl = $json_dsr->{data}->{session}->{content_uri};
     }
   }else{
     $vurl= $client->prepare_download($video_id);
   }
   if ($vurl=~ /low$/){die "low quality";}
-  my $dl_error="";
-  my $dl_size=-1;
-  my $dl_downloaded=0;
-  
+
   my $ping_content;
   if(defined($json_dsr)){
     $ping_content=encode_json({session => $json_dsr->{data}->{session}});
   }
+  if($is_hls==0){
+    return DownloadFile($vurl,$client->user_agent,$fh,$range_from,$session_uri,$json_dsr->{data}->{session}->{id},$ping_content);
+  }else{
+    die "HLS encryption not supported.";
 
+    my $dir_tmp = File::Spec->catfile($working_dir , $video_id.".hls_tmp/");
+    my $ua=$client->user_agent;
+    
+    $ua->default_header( "Origin" => "https://www.nicovideo.jp" );
+    $ua->default_header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+    
+    {
+      #以下を参考に。
+      #https://github.com/tor4kichi/Hohoema/issues/778
+      #なくても動いていたと思うが…。
+      my $ping_uri="https://nvapi.nicovideo.jp/v1/2ab0cbaa/watch?t=".uri_escape($info->{video}->{dmcInfo}->{tracking_id});
+      my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
+      $ua->request($request_option);
+      $ua->get($ping_uri);
+      
+      print $ping_uri."\n";
+    }
+    
+    if(-d $dir_tmp){
+      rmtree $dir_tmp;
+    }
+    mkdir $dir_tmp;
+    
+    my $m3u8_master_res = $ua->get($json_dsr->{data}->{session}->{content_uri});
+
+    {
+      open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($json_dsr->{data}->{session}->{content_uri})) or die $!;
+      print {$fh_m3u8} $m3u8_master_res->content;
+    }
+    
+    
+    my $m3u8_playlist;
+    {
+      foreach my $line (split(/\n/,$m3u8_master_res->content)){
+        if($line=~ /^\#/){next;}
+        $m3u8_playlist = $line;
+      }
+      if(! defined($m3u8_playlist)){die "No playlist provided.";}
+      my $m3u8_master_dir=$json_dsr->{data}->{session}->{content_uri};
+      $m3u8_master_dir=~ s/\/[^\/]+?$/\//;
+      $m3u8_playlist = $m3u8_master_dir.$m3u8_playlist;
+    }
+    
+    sleep(1);
+    my $m3u8_playlist_res = $ua->get($m3u8_playlist);
+    {
+      open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org") or die $!;
+      print {$fh_m3u8} $m3u8_playlist_res->content;
+    }
+    {
+      open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist)) or die $!;
+      my $content = $m3u8_playlist_res->content;
+      $content=~ s/([\n\r][^\#\n\r][^\?\n\r]*)\?[^\?\n\r]+([\n\r])/$1$2/g;
+      $content=~ s/([\n\r]\#EXT-X-KEY:.+URI=)"[^"]+"/$1"hls"/;
+      print {$fh_m3u8} $content;
+    }
+    
+    my $m3u8_playlist_dir = $m3u8_playlist;
+    $m3u8_playlist_dir =~ s/\/[^\/]+?$/\//;
+    
+    foreach my $line (split(/\n/,$m3u8_playlist_res->content)){
+      chomp($line);
+      if($line=~ /^\#EXT-X-KEY:.+URI="([^"]+)"/){
+        my $hls_key_url = $1;
+        my $hls_key_res = $ua->get($hls_key_url);
+        open my $fh_hls_key, '>', File::Spec->catfile($dir_tmp,"hls") or die $!;
+        print {$fh_hls_key} $hls_key_res->content;
+        
+        #open my $fh_hls_key_info, '>', File::Spec->catfile($dir_tmp,"hls_info") or die $!;
+        #print {$fh_hls_key_info} "$hls_key_url\nhls\n";
+        
+        open my $fh_hls_key_json, '>', File::Spec->catfile($dir_tmp,"hls_info.json") or die $!;
+        print {$fh_hls_key_json} encode_json($info->{video}->{dmcInfo}->{encryption});
+        
+        next;
+      }
+      if($line eq ""){next;}
+      if($line=~ /^\#/){next;}
+      {
+        my $ts_res = $ua->get($m3u8_playlist_dir.$line);
+        sleep(1);
+        
+        open my $fh_ts, '>', File::Spec->catfile($dir_tmp,GetFileName($line)) or die $!;
+        print {$fh_ts} $ts_res->content;
+        next;
+      }
+    }
+
+    return (0,0,1);
+  }
+}
+
+sub GetFileName{
+  my ($file)=@_;
+  $file =~ s/\?[^\?]+$//;
+  $file =~ s/^.+\///;
+  return $file;
+}
+
+sub DownloadFile{
+  my ($vurl,$ua,$fh,$range_from,$session_uri,$session_id,$ping_content)=@_;
+  my $dl_error="";
+  my $dl_size=-1;
+  my $dl_downloaded=0;
+  my $last_ping=time;
+  
   my $downloder = sub {
     my ($data, $res, $proto) = @_;
     $dl_size=0+$res->headers->header('Content-Length') if defined $res->headers->header('Content-Length');
@@ -182,14 +304,13 @@ sub DownloadVideo{
     print {$fh} $data;
 
     if(defined($session_uri) && time-$last_ping>40){
-      my $ping_uri=$session_uri."/".$json_dsr->{data}->{session}->{id}."?_format=json&_method=PUT";
-      #print "ping\n";
+      my $ping_uri=$session_uri."/".$session_id."?_format=json&_method=PUT";
       
       my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
       $request_option->content($ping_content);
-      $client->user_agent->request($request_option);
+      $ua->request($request_option);
       
-      $client->user_agent->post($ping_uri, Content => $ping_content);
+      $ua->post($ping_uri, Content => $ping_content);
       
       $last_ping = time;
     }
@@ -198,7 +319,7 @@ sub DownloadVideo{
   {
     my $request=HTTP::Request->new( GET => $vurl );
     $request->header(Range=>"bytes=".($range_from)."-");
-    my $res2=$client->user_agent->request( $request, $downloder);
+    my $res2=$ua->request( $request, $downloder);
     die "Failed: ".$res2->status_line if $res2->is_error;
   }
   
@@ -250,6 +371,30 @@ sub EscapeJson{
 
 sub GetDmcSessionRequest{
   my ($info) = @_;
+  
+  my $protocol_parameters;
+  
+  if(! defined($info->{video}->{dmcInfo}->{encryption})){
+    $protocol_parameters=<<"EOF";
+            "http_output_download_parameters": {
+              "use_well_known_port": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_well_known_port}==1?"yes":"no"]}",
+              "use_ssl": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_ssl}==1?"yes":"no"]}",
+              "transfer_preset": ""
+            }
+EOF
+  }else{
+    my $json_in=encode_json($info->{video}->{dmcInfo}->{encryption});
+    $protocol_parameters=<<"EOF";
+            "hls_parameters": {
+              "use_well_known_port": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_well_known_port}==1?"yes":"no"]}",
+              "use_ssl": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_ssl}==1?"yes":"no"]}",
+              "transfer_preset": "",
+              "segment_duration": 5000,
+              "encryption": ${json_in}
+            }
+EOF
+  }
+  
   return <<"EOF";
 {
   "session": {
@@ -287,11 +432,7 @@ join('", "',@{$info->{video}->{dmcInfo}->{session_api}->{audios}})
       "parameters": {
         "http_parameters": {
           "parameters": {
-            "http_output_download_parameters": {
-              "use_well_known_port": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_well_known_port}==1?"yes":"no"]}",
-              "use_ssl": "@{[$info->{video}->{dmcInfo}->{session_api}->{urls}[0]->{is_ssl}==1?"yes":"no"]}",
-              "transfer_preset": ""
-            }
+${protocol_parameters}
           }
         }
       }

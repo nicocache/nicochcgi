@@ -21,7 +21,7 @@
   </head>
   <body style="background-color:black;margin:0;overflow:hidden;">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;overflow:hidden;" >
-      <video style="position:absolute;z-index:1;" autoplay controls onplay="ResizeOnPlay();" onended="MovieEnded();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
+      <video style="position:absolute;z-index:1;" autoplay controls oncanplay="ApplyFullScreenSetting();" onplay="ResizeOnPlay();" onended="MovieEnded();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
       </video>
       <canvas style="margin:0 auto;top:0;position:absolute;z-index:2;background:transparent;pointer-events: none;" width="855" height="481">
       </canvas>
@@ -488,10 +488,14 @@
       function SetSizeFullFixedUncontorolable(){
         let w=GetWindowWidth();
         let h=GetWindowHeight();
-        let ht=w*9.0/16.0;
+        let video1=document.getElementsByTagName("video")[0];
+        let videoAspect=video1.videoHeight!=0?1.0*video1.videoHeight/video1.videoWidth:9.0/16.0
+        //let videoAspect=9.0/16.0
+        let ht=w*videoAspect;
+        console.log(videoAspect);
         if(ht>h){
           ht=h;
-          w=ht*(16/9);
+          w=ht/videoAspect;
         }
         SetSize(w,ht);
       }
