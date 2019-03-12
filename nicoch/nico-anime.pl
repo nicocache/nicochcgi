@@ -104,6 +104,7 @@ foreach my $url (@url) {
 
         print "Download $file\n";
         open my $fh, '>', $filetmp or die $!;
+        binmode($fh);
         eval {
           my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir);
           if($is_hls){
@@ -186,10 +187,16 @@ sub DownloadVideo{
   if($is_hls==0){
     return DownloadFile($vurl,$client->user_agent,$fh,$range_from,$session_uri,$json_dsr->{data}->{session}->{id},$ping_content);
   }else{
+    # Turn off/on next line to enable/disable HLS encryption.
     die "HLS encryption not supported.";
-
-    my $dir_tmp = File::Spec->catfile($working_dir , $video_id.".hls_tmp/");
+    
+    my $dir_tmp = File::Spec->catfile($working_dir , $video_id.".hls/");
     my $ua=$client->user_agent;
+    
+    if(-e File::Spec->catfile($dir_tmp,"done")){
+      print "Already downloaded (Not converted.)\n";
+      return (0,0,1);
+    }
     
     $ua->default_header( "Origin" => "https://www.nicovideo.jp" );
     $ua->default_header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
@@ -202,8 +209,6 @@ sub DownloadVideo{
       my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
       $ua->request($request_option);
       $ua->get($ping_uri);
-      
-      print $ping_uri."\n";
     }
     
     if(-d $dir_tmp){
@@ -216,10 +221,11 @@ sub DownloadVideo{
     {
       open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($json_dsr->{data}->{session}->{content_uri})) or die $!;
       print {$fh_m3u8} $m3u8_master_res->content;
+      close($fh_m3u8);
     }
     
-    
     my $m3u8_playlist;
+
     {
       foreach my $line (split(/\n/,$m3u8_master_res->content)){
         if($line=~ /^\#/){next;}
@@ -231,49 +237,88 @@ sub DownloadVideo{
       $m3u8_playlist = $m3u8_master_dir.$m3u8_playlist;
     }
     
-    sleep(1);
     my $m3u8_playlist_res = $ua->get($m3u8_playlist);
+    if(! $m3u8_playlist_res->is_success){die "Download failed.";}
     {
-      open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org") or die $!;
-      print {$fh_m3u8} $m3u8_playlist_res->content;
+      open my $fh_m3u8_org, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org") or die $!;
+      print {$fh_m3u8_org} $m3u8_playlist_res->content;
+      close($fh_m3u8_org);
     }
+    
     {
       open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist)) or die $!;
       my $content = $m3u8_playlist_res->content;
       $content=~ s/([\n\r][^\#\n\r][^\?\n\r]*)\?[^\?\n\r]+([\n\r])/$1$2/g;
-      $content=~ s/([\n\r]\#EXT-X-KEY:.+URI=)"[^"]+"/$1"hls"/;
+      $content=~ s/([\n\r]\#EXT-X-KEY:.+URI=)"[^"]+"/$1"\.\/hls.key"/;
       print {$fh_m3u8} $content;
+      close($fh_m3u8);
     }
     
+    #open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist)) or die $!;
+
     my $m3u8_playlist_dir = $m3u8_playlist;
     $m3u8_playlist_dir =~ s/\/[^\/]+?$/\//;
     
+    my $hls_key_url = $info->{video}->{dmcInfo}->{encryption}->{hls_encryption_v1}->{key_uri};
+
     foreach my $line (split(/\n/,$m3u8_playlist_res->content)){
       chomp($line);
       if($line=~ /^\#EXT-X-KEY:.+URI="([^"]+)"/){
-        my $hls_key_url = $1;
-        my $hls_key_res = $ua->get($hls_key_url);
-        open my $fh_hls_key, '>', File::Spec->catfile($dir_tmp,"hls") or die $!;
-        print {$fh_hls_key} $hls_key_res->content;
+        #print {$fh_m3u8} $line."\n";
+        $hls_key_url = $1;
+        
+        {
+          my $hls_key_res = $ua->get($hls_key_url);
+          open my $fh_hls_key, '>', File::Spec->catfile($dir_tmp,"hls.key") or die $!;
+          binmode($fh_hls_key);
+          print {$fh_hls_key} $hls_key_res->content;
+          close($fh_hls_key);
+        }
+        
+        #debug
+        #鍵はアクセスする度に変えてるらしい
+        #どの鍵が正しいんだ？ タイミングか？
+        #for(my $i=0;$i < 20 ; $i++){
+        #  print unpack( 'H*', $ua->get($hls_key_url)->content);
+        #  print "\n";
+        #  sleep(1);
+        #}
+        #exit;
         
         #open my $fh_hls_key_info, '>', File::Spec->catfile($dir_tmp,"hls_info") or die $!;
         #print {$fh_hls_key_info} "$hls_key_url\nhls\n";
         
         open my $fh_hls_key_json, '>', File::Spec->catfile($dir_tmp,"hls_info.json") or die $!;
         print {$fh_hls_key_json} encode_json($info->{video}->{dmcInfo}->{encryption});
+        close($fh_hls_key_json);
         
         next;
       }
-      if($line eq ""){next;}
+      if($line eq ""){
+        #print {$fh_m3u8} $line."\n";
+        next;
+      }
       if($line=~ /^\#/){next;}
       {
+        #print {$fh_m3u8} GetFileName($line)."\n";
+
         my $ts_res = $ua->get($m3u8_playlist_dir.$line);
-        sleep(1);
+        
+        #鍵はアクセスごとに変わる。
+        #tsファイルは一連のダウンロードごとに変わる。
         
         open my $fh_ts, '>', File::Spec->catfile($dir_tmp,GetFileName($line)) or die $!;
+        binmode($fh_ts);
         print {$fh_ts} $ts_res->content;
+        #close($fh_ts);
+        
         next;
       }
+    }
+    
+    {
+      open my $fh_done, '>', File::Spec->catfile($dir_tmp,"done") or die $!;
+      close($fh_done);
     }
 
     return (0,0,1);
