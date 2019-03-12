@@ -105,7 +105,7 @@ foreach my $url (@url) {
         open my $fh, '>', $filetmp or die $!;
         binmode($fh);
         eval {
-          my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir);
+          my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir,$conf{"support_hls_enc"});
           if($is_hls){
             unlink $filetmp;
             return;
@@ -150,7 +150,7 @@ foreach my $url (@url) {
 print "Time: ".time."\nDone\n";
 
 sub DownloadVideo{
-  my ($info,$video_id,$chid,$client,$range_from,$fh,$working_dir)=@_;
+  my ($info,$video_id,$chid,$client,$range_from,$fh,$working_dir,$support_HLS_enc)=@_;
   
   if(! defined($info)){
     $info = GetInfo($client->user_agent,$video_id,$chid);
@@ -187,7 +187,7 @@ sub DownloadVideo{
     return DownloadFile($vurl,$client->user_agent,$fh,$range_from,$session_uri,$json_dsr->{data}->{session}->{id},$ping_content);
   }else{
     # Turn off/on next line to enable/disable HLS encryption.
-    die "HLS encryption not supported.";
+    if(! defined($support_HLS_enc) || $support_HLS_enc eq "false"){die "HLS encryption not supported.";}
     
     my $dir_tmp = File::Spec->catfile($working_dir , $video_id.".hls/");
     my $ua=$client->user_agent;
