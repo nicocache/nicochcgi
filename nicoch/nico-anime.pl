@@ -11,7 +11,6 @@ use XML::Simple;
 use Net::Netrc;
 
 use URI::Escape;
-#use Unicode::Escape qw(escape unescape);
 use JSON;
 
 use File::Path;
@@ -198,17 +197,29 @@ sub DownloadVideo{
       return (0,0,1);
     }
     
-    $ua->default_header( "Origin" => "https://www.nicovideo.jp" );
-    $ua->default_header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+    #$ua->default_header( "Origin" => "https://www.nicovideo.jp" );
+    #$ua->default_header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+    #$ua->agent('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36 Vivaldi/2.2.1388.37');
     
     {
       #以下を参考に。
       #https://github.com/tor4kichi/Hohoema/issues/778
-      #なくても動いていたと思うが…。
+      #これを正しくセットしないと動きません。
       my $ping_uri="https://nvapi.nicovideo.jp/v1/2ab0cbaa/watch?t=".uri_escape($info->{video}->{dmcInfo}->{tracking_id});
+
       my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
       $ua->request($request_option);
-      $ua->get($ping_uri);
+
+      my $request_get=HTTP::Request->new( GET => $ping_uri );
+      $request_get->header( "X-Frontend-Id" => "6" );
+      $request_get->header( "X-Frontend-Version" => "0" );
+      $request_get->header( "Origin" => "https://www.nicovideo.jp" );
+      $request_get->header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+      
+      my $res=$ua->request( $request_get );
+      if(decode_json($res->content)->{meta}->{status} ne "200"){
+        print "Ping failed : $ping_uri\nContinue\n";
+      }
     }
     
     if(-d $dir_tmp){
@@ -225,6 +236,7 @@ sub DownloadVideo{
     }
     
     my $m3u8_playlist;
+    my $m3u8_playlist_local;
 
     {
       foreach my $line (split(/\n/,$m3u8_master_res->content)){
@@ -235,18 +247,19 @@ sub DownloadVideo{
       my $m3u8_master_dir=$json_dsr->{data}->{session}->{content_uri};
       $m3u8_master_dir=~ s/\/[^\/]+?$/\//;
       $m3u8_playlist = $m3u8_master_dir.$m3u8_playlist;
+      $m3u8_playlist_local=File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org");
     }
     
     my $m3u8_playlist_res = $ua->get($m3u8_playlist);
-    if(! $m3u8_playlist_res->is_success){die "Download failed.";}
+
     {
-      open my $fh_m3u8_org, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org") or die $!;
+      open my $fh_m3u8_org, '>', $m3u8_playlist_local.".org" or die $!;
       print {$fh_m3u8_org} $m3u8_playlist_res->content;
       close($fh_m3u8_org);
     }
     
     {
-      open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist)) or die $!;
+      open my $fh_m3u8, '>', $m3u8_playlist_local or die $!;
       my $content = $m3u8_playlist_res->content;
       $content=~ s/([\n\r][^\#\n\r][^\?\n\r]*)\?[^\?\n\r]+([\n\r])/$1$2/g;
       $content=~ s/([\n\r]\#EXT-X-KEY:.+URI=)"[^"]+"/$1"\.\/hls.key"/;
@@ -254,64 +267,69 @@ sub DownloadVideo{
       close($fh_m3u8);
     }
     
-    #open my $fh_m3u8, '>', File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist)) or die $!;
-
     my $m3u8_playlist_dir = $m3u8_playlist;
     $m3u8_playlist_dir =~ s/\/[^\/]+?$/\//;
     
+    {
+      open my $fh_hls_key_json, '>', File::Spec->catfile($dir_tmp,"hls_info.json") or die $!;
+      print {$fh_hls_key_json} encode_json($info->{video}->{dmcInfo}->{encryption});
+      close($fh_hls_key_json);
+    }
+
+    my $last_ping = time;
     my $hls_key_url = $info->{video}->{dmcInfo}->{encryption}->{hls_encryption_v1}->{key_uri};
 
     foreach my $line (split(/\n/,$m3u8_playlist_res->content)){
       chomp($line);
       if($line=~ /^\#EXT-X-KEY:.+URI="([^"]+)"/){
-        #print {$fh_m3u8} $line."\n";
         $hls_key_url = $1;
         
         {
-          my $hls_key_res = $ua->get($hls_key_url);
+          #my $hls_key_res = $ua->get($hls_key_url);
+          my $request=HTTP::Request->new( GET => $hls_key_url );
+          $request->header( "Cache-Control" => "no-cache" );
+          $request->header( "Pragma" => "no-cache" );
+          $request->header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+          my $hls_key_res=$ua->request( $request );
+          
+          #use YAML;
+          #print "HLS key response:\n";
+          #print Dump $hls_key_res;
+          
           open my $fh_hls_key, '>', File::Spec->catfile($dir_tmp,"hls.key") or die $!;
           binmode($fh_hls_key);
+          #DownloadFile($hls_key_url,$ua,$fh_hls_key);
           print {$fh_hls_key} $hls_key_res->content;
           close($fh_hls_key);
+          
+          sleep(1);
         }
-        
-        #debug
-        #鍵はアクセスする度に変えてるらしい
-        #どの鍵が正しいんだ？ タイミングか？
-        #for(my $i=0;$i < 20 ; $i++){
-        #  print unpack( 'H*', $ua->get($hls_key_url)->content);
-        #  print "\n";
-        #  sleep(1);
-        #}
-        #exit;
-        
-        #open my $fh_hls_key_info, '>', File::Spec->catfile($dir_tmp,"hls_info") or die $!;
-        #print {$fh_hls_key_info} "$hls_key_url\nhls\n";
-        
-        open my $fh_hls_key_json, '>', File::Spec->catfile($dir_tmp,"hls_info.json") or die $!;
-        print {$fh_hls_key_json} encode_json($info->{video}->{dmcInfo}->{encryption});
-        close($fh_hls_key_json);
         
         next;
       }
       if($line eq ""){
-        #print {$fh_m3u8} $line."\n";
         next;
       }
       if($line=~ /^\#/){next;}
       {
-        #print {$fh_m3u8} GetFileName($line)."\n";
-
-        my $ts_res = $ua->get($m3u8_playlist_dir.$line);
+        #my $ts_res = $ua->get($m3u8_playlist_dir.$line);
+        my $request=HTTP::Request->new( GET => $m3u8_playlist_dir.$line );
+        $request->header( "Origin" => "https://www.nicovideo.jp" );
+        $request->header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
+        my $ts_res=$ua->request( $request );
         
         #鍵はアクセスごとに変わる。
-        #tsファイルは一連のダウンロードごとに変わる。
+        #tsファイルはセッションごとに変わる。
         
         open my $fh_ts, '>', File::Spec->catfile($dir_tmp,GetFileName($line)) or die $!;
         binmode($fh_ts);
+        #my ($a,$b)=DownloadFile($m3u8_playlist_dir.$line,$ua,$fh_ts);
+        #if($a != $b){die "Download failed: ".$m3u8_playlist_dir.$line;}
         print {$fh_ts} $ts_res->content;
-        #close($fh_ts);
+        close($fh_ts);
         
+        $last_ping = PingSession($ua,$session_uri,$json_dsr->{data}->{session}->{id},$ping_content,$last_ping);
+
         next;
       }
     }
@@ -320,7 +338,17 @@ sub DownloadVideo{
       open my $fh_done, '>', File::Spec->catfile($dir_tmp,"done") or die $!;
       close($fh_done);
     }
-
+    
+    {
+      my $tmp_mp4=File::Spec->catfile($working_dir , "tmp.mp4" );
+      unlink $tmp_mp4;
+      #open my $rs, "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc \"$tmp_mp4\"";
+      print "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc \"$tmp_mp4\"\n";
+      if(-e $tmp_mp4 && -d $dir_tmp){
+        #rmtree $dir_tmp;
+      }
+    }
+    
     return (0,0,1);
   }
 }
@@ -339,6 +367,8 @@ sub DownloadFile{
   my $dl_downloaded=0;
   my $last_ping=time;
   
+  binmode($fh);
+  
   my $downloder = sub {
     my ($data, $res, $proto) = @_;
     $dl_size=0+$res->headers->header('Content-Length') if defined $res->headers->header('Content-Length');
@@ -348,22 +378,15 @@ sub DownloadFile{
     $dl_downloaded+=length $data;
     print {$fh} $data;
 
-    if(defined($session_uri) && time-$last_ping>40){
-      my $ping_uri=$session_uri."/".$session_id."?_format=json&_method=PUT";
-      
-      my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
-      $request_option->content($ping_content);
-      $ua->request($request_option);
-      
-      $ua->post($ping_uri, Content => $ping_content);
-      
-      $last_ping = time;
-    }
+    $last_ping = PingSession($ua,$session_uri,$session_id,$ping_content,$last_ping);
     };
 
   {
     my $request=HTTP::Request->new( GET => $vurl );
-    $request->header(Range=>"bytes=".($range_from)."-");
+    if(defined($range_from) && $range_from != 0){
+      $request->header(Range=>"bytes=".($range_from)."-");
+    }
+    
     my $res2=$ua->request( $request, $downloder);
     die "Failed: ".$res2->status_line if $res2->is_error;
   }
@@ -371,6 +394,22 @@ sub DownloadFile{
   if($dl_error ne ""){die $dl_error;}
 
   return ($dl_size,$dl_downloaded);
+}
+
+sub PingSession{
+  my ($ua,$session_uri,$session_id,$ping_content,$last_ping)=@_;
+  if(defined($session_uri) && time-$last_ping>40){
+    my $ping_uri=$session_uri."/".$session_id."?_format=json&_method=PUT";
+    
+    my $request_option=HTTP::Request->new( "OPTIONS" , $ping_uri );
+    $request_option->content($ping_content);
+    $ua->request($request_option);
+    
+    $ua->post($ping_uri, Content => $ping_content);
+    return time;
+  }else{
+    return $last_ping;
+  }
 }
 
 sub GetInfo{
