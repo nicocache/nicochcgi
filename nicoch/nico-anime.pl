@@ -107,7 +107,7 @@ foreach my $url (@url) {
         eval {
           my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir,$conf{"support_hls_enc"});
           if($is_hls){
-            unlink $filetmp;
+            if(-e $filetmp){rename $filetmp,$file;}
             return;
           }
           
@@ -247,7 +247,7 @@ sub DownloadVideo{
       my $m3u8_master_dir=$json_dsr->{data}->{session}->{content_uri};
       $m3u8_master_dir=~ s/\/[^\/]+?$/\//;
       $m3u8_playlist = $m3u8_master_dir.$m3u8_playlist;
-      $m3u8_playlist_local=File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist).".org");
+      $m3u8_playlist_local=File::Spec->catfile($dir_tmp,GetFileName($m3u8_playlist));
     }
     
     my $m3u8_playlist_res = $ua->get($m3u8_playlist);
@@ -292,10 +292,6 @@ sub DownloadVideo{
           $request->header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
           my $hls_key_res=$ua->request( $request );
           
-          #use YAML;
-          #print "HLS key response:\n";
-          #print Dump $hls_key_res;
-          
           open my $fh_hls_key, '>', File::Spec->catfile($dir_tmp,"hls.key") or die $!;
           binmode($fh_hls_key);
           #DownloadFile($hls_key_url,$ua,$fh_hls_key);
@@ -318,13 +314,15 @@ sub DownloadVideo{
         $request->header( "Referer" => "https://www.nicovideo.jp/watch/$video_id" );
         my $ts_res=$ua->request( $request );
         
+        if (! $ts_res->is_success || $ts_res->header( "Content-Length" ) +0 != length($ts_res->content)) {
+          die "Download failure: ".$m3u8_playlist_dir.$line;
+        }
+        
         #鍵はアクセスごとに変わる。
         #tsファイルはセッションごとに変わる。
         
         open my $fh_ts, '>', File::Spec->catfile($dir_tmp,GetFileName($line)) or die $!;
         binmode($fh_ts);
-        #my ($a,$b)=DownloadFile($m3u8_playlist_dir.$line,$ua,$fh_ts);
-        #if($a != $b){die "Download failed: ".$m3u8_playlist_dir.$line;}
         print {$fh_ts} $ts_res->content;
         close($fh_ts);
         
@@ -342,10 +340,16 @@ sub DownloadVideo{
     {
       my $tmp_mp4=File::Spec->catfile($working_dir , "tmp.mp4" );
       unlink $tmp_mp4;
-      #open my $rs, "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc \"$tmp_mp4\"";
-      print "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc \"$tmp_mp4\"\n";
+      open my $rs, "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc -loglevel error \"$tmp_mp4\" 2>&1 |";
+      my @result = <$rs>;
+      if(@result + 0 != 0){
+        my $results=join(';', @result);
+        print "ffmpeg result : $results \n";
+      }
+      close($rs);
+      #print "ffmpeg -allowed_extensions ALL -i \"$m3u8_playlist_local\" -c copy -bsf:a aac_adtstoasc \"$tmp_mp4\"\n";
       if(-e $tmp_mp4 && -d $dir_tmp){
-        #rmtree $dir_tmp;
+        rmtree $dir_tmp;
       }
     }
     
