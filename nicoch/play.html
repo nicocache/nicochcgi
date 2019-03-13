@@ -123,7 +123,10 @@
       
       function SetVideoSource(src){
         let video=document.getElementsByTagName("video")[0];
-        if(src!=video.getAttribute("src")){video.src=src;}
+        if(src!=video.getAttribute("src")){
+          video.src=src;
+          Comments=[];
+        }
       }
 
       var CanvasMessage="";
@@ -256,8 +259,6 @@
           MovieId=id;
         }
         
-        Comments=[];
-
         if(CommentSource!=comment_org){
           GetChatXML(function(xml) {
             Comments=ParseComment(xml);
