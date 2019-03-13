@@ -501,7 +501,9 @@
       function SetSizeDefault(){
         let w=GetWindowWidth();
         let wm=Math.min(w,855);
-        SetSize(wm,wm/855.0*481.0);
+        let video1=document.getElementsByTagName("video")[0];
+        //SetSize(wm,wm/855.0*481.0);
+        SetSize(wm,wm/video1.videoWidth*video1.videoHeight);
       }
       function GetWindowWidth(){
         //return parent?parent.innerWidth:window.innerWidth;
@@ -601,8 +603,8 @@
         }
         return true;
       }
-      function GetActualVpos(vpos,duration,cmDuration){
-        return Math.max(Math.min(vpos-100,duration*100-cmDuration*0.5),0);
+      function GetActualVpos(vpos,duration,cmDuration,shift){
+        return Math.max(Math.min(vpos-(shift?100:0),duration*100-cmDuration*0.5),0);
       }
       function DrawComment(){
         let canvas1=document.getElementsByTagName("canvas")[0];
@@ -610,7 +612,7 @@
         let context1=canvas1.getContext('2d');
         context1.clearRect(0,0,canvas1.width,canvas1.height);
 
-        let height=canvas1.width/855*30;
+        let height=Math.min(canvas1.width/video1.videoWidth*video1.videoHeight,canvas1.height)/9.0*16.0/855*30;
         let time=video1.currentTime;
         let fontWeight=600;
         let fontName="";
@@ -649,7 +651,9 @@
           comment.lastDisplayed=0;
           let commentText=comment.text.replace(/\\/g,"\u29F5").replace(/\t/g,'　　 ');
           let commentLines=commentText.split('\n');
-          let cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration);
+          let cvpos=GetActualVpos(comment.vpos,video1.duration,cmDuration,
+            ! (ContainsCommand(comment.mail,"ue") || ContainsCommand(comment.mail,"shita"))
+          );
           if(time * 100-cmDuration*1<cvpos && cvpos < time *100 +cmDuration*0){
             if(comment.mail!=null && ContainsCommand(comment.mail,"invisible")){continue;}
 
@@ -704,13 +708,15 @@
                   }
                 }
               }
-              if(height*commentLines.length*heightScale>canvas1.height){
+              if(height*commentLines.length*heightScale>canvas1.height && !isender){
                 r.y=0;
                 heightScale/=height*commentLines.length*heightScale/canvas1.height;
               }
               }
               comment.lastY=r.y/canvas1.width;
-              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:
+                video1.videoHeight / video1.videoWidth / 0.75
+              );
               if(comment.width>commentWidth){
                 heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
                 let fsize=Math.max(height*heightScale,1);
@@ -745,14 +751,16 @@
                   }
                 }
               }
-              if(height*commentLines.length*heightScale>canvas1.height){
+              if(height*commentLines.length*heightScale>canvas1.height && !isender){
                 r.y=0;
                 heightScale/=height*commentLines.length*heightScale/canvas1.height;
               }
               }
               comment.lastY=r.y/canvas1.width;
 
-              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:0.75);
+              let commentWidth=canvas1.width*(ContainsCommand(comment.mail,"full")?1:
+                video1.videoHeight / video1.videoWidth / 0.75
+              );
               if(comment.width>commentWidth){
                 heightScale=Math.min(heightScale*commentWidth/comment.width,heightScale);
                 context1.font=GetFontText(height,heightScale,fontName,fontWeight);
@@ -830,13 +838,13 @@ context1.stroke();
         return fontWeight+" "+(height*heightScale)+"px "+fontName;
       }
       function GetFromOperated(operatedComments,comment,videoDuration,cmDuration,time,canvasWidth,fontHeight,testContext){
-        let cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration);
+        let cvpos=GetActualVpos(comment.vpos,videoDuration,cmDuration,true);
  //       if(comment.lastY>=0){return new Coordinate(GetCommentX(cvpos,time*100,comment.width,canvasWidth,cmDuration),comment.lastY*canvasWidth);}
         let ry=Math.max(0,comment.lastY*canvasWidth);
         let firstCollision=true;
         for(let i=0;i<operatedComments.length;i++){
           let opCom=operatedComments[i];
-          let cvpos2=GetActualVpos(opCom.vpos,videoDuration,cmDuration);
+          let cvpos2=GetActualVpos(opCom.vpos,videoDuration,cmDuration,true);
           let a=GetCommentX(cvpos,cvpos2+cmDuration,comment.width,canvasWidth,cmDuration);
           let b=GetCommentX(cvpos2,cvpos,opCom.width,canvasWidth,cmDuration) + opCom.width;
           let c=GetCommentX(cvpos2,cvpos+cmDuration,opCom.width,canvasWidth,cmDuration);
