@@ -128,9 +128,9 @@ window.addEventListener('resize',function(event){
 document.onkeydown = function (e){
   var iframe=document.getElementById("player");
   var iframed = (iframe.contentWindow || iframe.contentDocument);
-  if(e.ctrlKey == true || e.altKey == true || e.shiftKey == true ) return;
+  if(e.ctrlKey == true || e.altKey == true) return;
   //Ctrl+F対策。プレイヤーでは不要。
-  iframed.OnKeyDown(e.keyCode,e.key,function(){e.preventDefault();});
+  iframed.OnKeyDown(e.keyCode,e.key,function(){e.preventDefault();},e.shiftKey);
 };
 
 var VideoCount=0;

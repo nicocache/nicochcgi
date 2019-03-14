@@ -269,8 +269,8 @@
         }
       }
       function Coord(x,y){this.x=x;this.y=y;}
-      document.onkeydown = function (e){OnKeyDown(e.keyCode,e.key,function(){e.preventDefault();});};
-      function OnKeyDown(keyCode,key,preventDefault){
+      document.onkeydown = function (e){OnKeyDown(e.keyCode,e.key,function(){e.preventDefault();},e.shiftKey);};
+      function OnKeyDown(keyCode,key,preventDefault,shift){
         let video1=document.getElementsByTagName("video")[0];
         if(keyCode==37 || keyCode==227 || key=="ArrowLeft" || key=="Left"){
           video1.currentTime-=10;
@@ -305,6 +305,8 @@
         else if(keyCode==77 || key=="m"){video1.muted=!video1.muted;preventDefault();}
         else if(keyCode==70 || key=="f"){ToggleFullScreenStatus();preventDefault();}
         else if(keyCode==86 || key=="v"){ToggleUi();preventDefault();}//動画を一時停止して観察する隠しモード
+        else if(shift && (keyCode==188 || key=="," || key=="<")){VideoSpeedSub(0.25);preventDefault();}
+        else if(shift && (keyCode==190 || key=="." || key==">")){VideoSpeedAdd(0.25);preventDefault();}
       }
       function PreparePictureInPicture(){
         let button=document.getElementById("toggle_pip");
@@ -328,6 +330,19 @@
           });
           //button.style.opacity=1.0;
         }
+      }
+      function VideoSpeedAdd(value){
+        let video=document.getElementsByTagName("video")[0];
+        VideoSpeedSet(Math.min(2.0,video.playbackRate+0.25));
+      }
+      function VideoSpeedSub(value){
+        let video=document.getElementsByTagName("video")[0];
+        VideoSpeedSet(Math.max(0.25,video.playbackRate-0.25));
+      }
+      function VideoSpeedSet(value){
+        let video=document.getElementsByTagName("video")[0];
+        video.playbackRate = value;
+        SetMessageCanvas("x"+video.playbackRate.toFixed(2),1000);
       }
       function ShowCurrentTime(){
         let video=document.getElementsByTagName("video")[0];
