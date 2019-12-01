@@ -79,7 +79,7 @@ div.form_add{
 div.channel_group{
  column-width: 352px;
  column-gap: 15px;
- column-fill: auto;
+ column-fill: balance;
 }
 
 input[type=submit]{

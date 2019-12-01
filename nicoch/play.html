@@ -19,7 +19,7 @@
       #contextmenu.show{display: block;text-decoration:none;}
     </style>
   </head>
-  <body style="background-color:black;margin:0;overflow:hidden;">
+  <body style="background-color:black;margin:0;overflow:hidden;" allow="fullscreen">
     <div id="VideoPlayer" style="margin:0 auto;position:relative;overflow:hidden;" >
       <video style="position:absolute;z-index:1;" autoplay controls oncanplay="ApplyFullScreenSetting();" onplay="ResizeOnPlay();" onended="MovieEnded();" onpause="ResizeOnPause();" onvolumechange="VolumeChange(this);" oncanplay="/*HideFullScreenCenter();*/">
       </video>
@@ -167,9 +167,7 @@
         let canvasStyle=window.getComputedStyle(canvas1);
         let w=parseInt(canvasStyle.width);
         let menu = document.getElementById("contextmenu");
-        if(menu.classList.contains('show')) {
-          menu.classList.remove('show');
-        }
+        HideContextMenu();
         while (menu.firstChild) menu.removeChild(menu.firstChild);
         let hittest=false;
         for(let i=0;i<Comments.length;i++){
@@ -241,13 +239,17 @@
       },false);
       //document.body.addEventListener('click',function(){
       document.getElementsByTagName("video")[0].addEventListener('click',function(){
+      //document.getElementById("VideoPlayer").addEventListener('click',function(){
+        HideContextMenu();
+      },false);
+      function HideFullScreenCenter(){
+        document.getElementById("toggle_fullscreen_center").style.display="none";
+      }
+      function HideContextMenu(){
         let menu = document.getElementById("contextmenu");
         if(menu.classList.contains('show')) {
           menu.classList.remove('show');
         }
-      },false);
-      function HideFullScreenCenter(){
-        document.getElementById("toggle_fullscreen_center").style.display="none";
       }
 
       function Start(){
@@ -294,6 +296,7 @@
         }
         else if(keyCode==32 || keyCode==179 || key=="Spacebar" || key==" " || key=="MediaPlayPause"){
           if(video1.paused){video1.play();}else{video1.pause();}
+          HideContextMenu();
           preventDefault();
         }
         else if(key=="Play" && video1.paused){video1.play();preventDefault();}
@@ -423,10 +426,12 @@
           }
       }
       function ResizeOnPause(){
+        HideContextMenu();
         let video=document.getElementsByTagName("video")[0];
         SetControllerVisibility(video.controls);
       }
       function ResizeOnPlay(){
+        HideContextMenu();
         SetControllerVisibility(false);
       }
       function VolumeChange(from){
@@ -459,15 +464,21 @@
       }
       function requestFullscreen() {
         let target=document.body;
+        
+        var requestFullScreenApi = target.requestFullscreen || target.mozRequestFullScreen || target.webkitRequestFullScreen || target.msRequestFullscreen;
+        if(requestFullScreenApi != null){ requestFullScreenApi.call(target); }
+        
+        /*
         if (target.webkitRequestFullscreen) {
           target.webkitRequestFullscreen();
         } else if (target.mozRequestFullScreen) {
           target.mozRequestFullScreen();
         } else if (target.msRequestFullscreen) {
           target.msRequestFullscreen();
-        } else if (target.requestFullscreen) {
+        } else if (target.requestFullscreen){
           target.requestFullscreen();
         }
+        */
       }
       function exitFullscreen() {
         if (document.webkitCancelFullScreen) {
@@ -562,11 +573,7 @@
       }
       function ToggleUi(){
         let video=document.getElementsByTagName("video")[0];
-        let menu = document.getElementById("contextmenu");
-        
-        if(menu.classList.contains('show')) {
-          menu.classList.remove('show');
-        }
+        HideContextMenu();
         if(video.controls){
           if(ShowComment){ToggleComment();}
           video.controls=false;
