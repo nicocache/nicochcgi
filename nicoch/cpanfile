@@ -1,0 +1,17 @@
+requires 'Net::Netrc';
+requires 'LWP::UserAgent';
+requires 'URI';
+requires 'URI::Escape';
+requires 'CGI';
+requires 'Web::Scraper';
+requires 'Unicode::Escape';
+requires 'JSON';
+requires 'Term::ReadKey';
+requires 'String::Random';
+requires 'Digest::MD5';
+requires 'File::MimeInfo';
+requires 'File::Spec';
+requires 'File::Basename';
+requires 'File::Path';
+requires 'WWW::NicoVideo::Download';
+requires 'XML::Simple';
