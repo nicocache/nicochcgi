@@ -15,3 +15,5 @@ requires 'File::Basename';
 requires 'File::Path';
 requires 'WWW::NicoVideo::Download';
 requires 'XML::Simple';
+requires 'LWP::Protocol::http'
+requires 'LWP::Protocol::https'
