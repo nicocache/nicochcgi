@@ -61,7 +61,10 @@ foreach my $url (@url) {
 
     my ($chid) = $url =~ m!/([^/]+?)/?$!;
     my $chdir=File::Spec->catfile($animedir , $chid );
-    if(! -d $chdir){mkdir $chdir;}
+    if(! -d $chdir){
+      mkdir $chdir;
+      chmod 0777, $chdir;
+    }
 
     foreach my $surl (@{$video->{url}},@{$video2->{url}}){
         my ($video_id) = $surl =~ m!/watch/(\w+)!;
@@ -107,7 +110,10 @@ foreach my $url (@url) {
         eval {
           my ($dl_size, $dl_downloaded, $is_hls) = DownloadVideo($info,$video_id,$chid,$client,0,$fh,$chdir,$conf{"support_hls_enc"});
           if($is_hls){
-            if(-e $filetmp){rename $filetmp,$file;}
+            if(-e $filetmp){
+              chmod 0666,$filetmp;
+              rename $filetmp,$file;
+            }
             return;
           }
           
@@ -136,7 +142,10 @@ foreach my $url (@url) {
           if($dl_downloaded == 0){
             die "Downloaded file empty.";
           }
-          else{rename $filetmp,$file;}
+          else{
+            chmod 0666,$filetmp;
+            rename $filetmp,$file;
+          }
         };
         sleep 10;
         if ($@) {
@@ -226,6 +235,7 @@ sub DownloadVideo{
       rmtree $dir_tmp;
     }
     mkdir $dir_tmp;
+    chmod 0777, $dir_tmp;
     
     my $m3u8_master_res = $ua->get($json_dsr->{data}->{session}->{content_uri});
 

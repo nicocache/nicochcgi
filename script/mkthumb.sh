@@ -10,6 +10,7 @@ if [ -d $d ];then
     t="thumbs/${f%.*}.jpg"
     if [ ! -e "$t" ]; then 
       ffmpeg -i "$f" -ss 6 -vframes 1 -f image2 -vf scale=-1:720 "$t"
+      chmod 666 "$t"
     fi
   done
   cd ..

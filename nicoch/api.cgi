@@ -12,7 +12,7 @@ HEAD
 print "{\n";
 print "  \"recorded_channels\":\n  [\n";
 
-my %conf=GetConf("nicoch.conf");
+my %conf=GetConf("/etc/nicochcgi/nicoch.conf");
 my @dirs=glob $conf{"dlhome"}."/*";
 
 my $cnt1=0;
@@ -31,8 +31,9 @@ foreach my $dir (@dirs){
     my $cnt2=0;
     foreach my $file (@files){
       next if ! -e $file;
+      next if -s $file == 0;
       my ($watchid,$title) = $file =~ m!/([^\./]+)\.(.+)\.[^\.]+$!;
-      next if $watchid == "tmp";
+      next if $watchid eq "tmp" || $watchid eq "";
       if($cnt2>0){print ",\n";}
       $cnt2++;
      
