@@ -12,7 +12,7 @@ HEAD
 print "{\n";
 print "  \"recorded_channels\":\n  [\n";
 
-my %conf=GetConf("/etc/nicochcgi/nicoch.conf");
+my %conf=GetConf("nicoch.conf");
 my @dirs=glob $conf{"dlhome"}."/*";
 
 my $cnt1=0;
