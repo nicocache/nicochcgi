@@ -1,6 +1,12 @@
 # nicochcgi
 ニコニコチャンネルの自動キャッシュサーバー
 
+## Docker!
+Docker版のレポジトリは[kurema/nicochcgi_docker](https://github.com/kurema/nicochcgi_docker)です。
+
+インストール作業がかなり簡便になりました。
+Dockerfileを見ればセットアップ方法も概ね分かります。
+
 ## About
 ニコニコチャンネルを監視して、ダウンロードするツールです。  
 ダウンロードスクリプトに管理用のcgi、API、プレイヤー、テレビ向けUI等含めます。
@@ -13,7 +19,9 @@
 最新版とは限りません。静的サイト版。
 
 ## How to use
-インストール方法
+[dockerを利用した方法](https://github.com/kurema/nicochcgi_docker)がおすすめです！
+
+インストール方法 (サーバーで直接実行する場合)
 1. nicochフォルダをApacheの公開フォルダ(/var/www/html/nicoch/とか)にコピーします。  
 ```git clone https://github.com/nicocache/nicochcgi.git```とか。
 2. ユーザーを書き換えます。```sudo chown www-data:www-data *```とか。```chlist.*```の3ファイルはcgiが書き換えるので必須です。
