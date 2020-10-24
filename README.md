@@ -1,6 +1,12 @@
 # nicochcgi
 ニコニコチャンネルの自動キャッシュサーバー
 
+## Docker!
+Docker版のレポジトリは[kurema/nicochcgi_docker](https://github.com/kurema/nicochcgi_docker)です。
+
+インストール作業がかなり簡便になりました。
+Dockerfileを見ればセットアップ方法も概ね分かります。
+
 ## About
 ニコニコチャンネルを監視して、ダウンロードするツールです。  
 ダウンロードスクリプトに管理用のcgi、API、プレイヤー、テレビ向けUI等含めます。
