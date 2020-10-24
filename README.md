@@ -2,7 +2,9 @@
 ニコニコチャンネルの自動キャッシュサーバー
 
 ## Docker!
-Docker版のレポジトリは[kurema/nicochcgi_docker](https://github.com/kurema/nicochcgi_docker)です。
+Docker対応に伴いレポジトリを[kurema/nicochcgi_docker](https://github.com/kurema/nicochcgi_docker)に移動しました。  
+このレポジトリは基本的に開発終了となります。ただしいくつかの違い以外はほぼ同じなので好みによりこちらも利用できると思います。  
+レポジトリはフリーズしますが、気が向けば今後も時折バックポートするかもしれません。
 
 インストール作業がかなり簡便になりました。
 Dockerfileを見ればセットアップ方法も概ね分かります。
