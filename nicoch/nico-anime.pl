@@ -93,6 +93,9 @@ foreach my $url (@url) {
 
         $title=~ s/[\/\\\:\,\;\*\?\"\<\>\|]//g;
 
+        my @testfile=glob("\"".File::Spec->catfile($chdir , "*.$title.$ext")."\"" );
+        next if @testfile+0 >0;
+
         my $fileold = File::Spec->catfile($chdir , "$video_id.$ext");
         my $file = File::Spec->catfile($chdir , "$video_id.$title.$ext");
         my $filetmp = File::Spec->catfile($chdir , "tmp.$ext");
